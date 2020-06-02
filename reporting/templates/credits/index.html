@@ -1,1 +1,106 @@
-salom
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <title>Title</title>
+    {% load static %}
+
+    <link rel="stylesheet"  href="{% static 'credits/css/styles.css' %}" rel="stylesheet">
+    <script src="{% static 'credits/js/jquery.min.js' %}"></script>
+    <script src="{% static 'credits/js/jquery.mousewheel.min.js' %}"></script>
+    
+</head>
+
+<body>
+    <!-- APP WRAPPER -->
+    <div class="app app-loaded">
+        <!-- START APP CONTAINER -->
+        <div class="app-container">
+            <!-- START APP HEADER -->
+            {% block header %}
+            <div class="app-header">
+                <div class="container container-boxed">
+                    <ul class="app-header-buttons visible-mobile">
+                        <li><a href="#" class="btn btn-link btn-icon"data-navigation-horizontal-toggle="true"><span class="icon-menu"></span></a></li>
+                    </ul><a href="#" class="app-header-logo app-header-logo-light app-header-logo-condensed">Project</a>
+                    <ul class="app-header-buttons pull-right">
+                        <li><a href="#" class="btn btn-link btn-icon"><span class="icon-cog"></span></a></li>
+                        <li><a href="#" class="btn btn-default">Log Out</a></li>
+                    </ul>
+                </div>
+            </div>
+            {% endblock %}
+            <!-- END APP HEADER  -->
+            
+            <!-- START APP CONTENT -->
+            <div class="app-content">
+                
+                {% block navigation %}
+                <div class="app-navigation-horizontal margin-bottom-15">
+                    <div class="container container-boxed">
+                        <nav>
+                            <ul>
+                                <li class="openable active"><a
+                                        href="http://boooya.aqvatarius.com/pages-bank-cards.html#"><span
+                                            class="icon-earth"></span> My Account</a>
+                                    <ul>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-main.html">Main</a></li>
+                                        <li class="active"><a
+                                                href="http://boooya.aqvatarius.com/pages-bank-cards.html">My Cards</a>
+                                        </li>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-deposits.html">My
+                                                Deposits</a></li>
+                                    </ul>
+                                </li>
+                                <li class="openable"><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#"><span
+                                            class="icon-sync"></span> Activity</a>
+                                    <ul>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-activity.html">Recent
+                                                Activity</a></li>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#">Swift
+                                                Activity</a></li>
+                                    </ul>
+                                </li>
+                                <li class="openable"><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#"><span
+                                            class="icon-cog"></span> Settings</a>
+                                    <ul>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-settings.html">Account</a>
+                                        </li>
+                                        <li><a href="http://boooya.aqvatarius.com/pages-bank-security.html">Security</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endblock %}
+                
+                <!-- START PAGE CONTAINER -->
+                <div class="container container-boxed">
+                    CONTENT
+                </div><!-- END PAGE CONTAINER -->
+            </div><!-- END APP CONTENT -->
+        </div><!-- END APP CONTAINER -->
+        <!-- START APP FOOTER -->
+        <div class="app-footer app-footer-default" id="footer">
+            <div class="container container-boxed">
+                <div class="app-footer-line">
+                    <div class="copyright">© 2016 Boooya. All right reserved in the Ukraine and other countries.</div>
+                    <div class="pull-right">
+                        <ul class="list-inline">
+                            <li><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#">About</a></li>
+                            <li><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#">Help</a></li>
+                            <li><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#">API</a></li>
+                            <li><a href="http://boooya.aqvatarius.com/pages-bank-cards.html#">Contacts</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div><!-- END APP FOOTER -->
+    </div><!-- END APP WRAPPER -->
+    
+</body>
+
+</html>
