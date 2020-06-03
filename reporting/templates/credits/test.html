@@ -1,0 +1,40 @@
+{% extends "includes/base_generic.html" %}
+{% load static %}
+
+{% block page_header %}
+<!-- START PAGE HEADING -->
+<div class="app-heading-container app-heading-bordered bottom">
+    <ul class="breadcrumb">
+        <li><a href="/">Application</a></li>
+        <li class="active">Test page</li>
+    </ul>
+</div><!-- END PAGE HEADING -->
+{% endblock %}
+
+{% block page_container %}
+<!-- START PAGE CONTAINER -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <!-- START LATEST TRANSACTIONS -->
+            <div class="block block-condensed">
+                <div class="app-heading">
+                    <div class="title">
+                        <h2>Latest Transactions</h2>
+                        <p>Quick information</p>
+                    </div>
+                    <div class="heading-elements"><button class="btn btn-default btn-icon-fixed"><span
+                                class="icon-file-add"></span> All Transactions</button></div>
+                </div>
+                <div class="block-content">
+                    <div class="table-responsive">
+                        {{type}}
+                        <br>
+                        {{ mylist }}
+                    </div>
+                </div>
+            </div><!-- END LATEST TRANSACTIONS -->
+        </div>
+    </div>
+</div><!-- END PAGE CONTAINER -->
+{% endblock %}
