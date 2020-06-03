@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    {% block title %}<title>Credits application</title>{% endblock %}<!-- META SECTION -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <link rel="shortcut icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon">
+    <link rel="icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon"><!-- END META SECTION -->
+    <!-- Add additional CSS in static file -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'credits/css/styles.css' %}" rel="stylesheet">
+    
+</head>
+<body>
+    <!-- APP WRAPPER -->
+    <div class="app app-loaded">
+        <!-- START APP CONTAINER -->
+        <div class="app-container app-header-inside-content">
+
+            {% block sidebar %}{% include "includes/sidebar.html" %}{% endblock %}
+            
+            {% block app_content %}
+            <!-- START APP CONTENT -->
+            <div class="app-content app-sidebar-left">
+                
+                {% block app_header %}{% include "includes/app_header.html" %}{% endblock %}
+
+                {% block page_header %}{% endblock %}
+                
+                {% block page_container %}{% endblock %}
+
+            </div><!-- END APP CONTENT -->
+            {% endblock %}
+        </div><!-- END APP CONTAINER -->
+        {% block app_footer %}{% include "includes/app_footer.html" %}{% endblock %}
+        {% block side_panel %}{% include "includes/side_panel.html" %}{% endblock %}
+        <!-- APP OVERLAY -->
+        <div class="app-overlay"></div><!-- END APP OVERLAY -->
+    </div><!-- END APP WRAPPER -->
+
+    <!-- IMPORTANT SCRIPTS -->
+    <script type="text/javascript" src="{% static 'credits/js/vendor/jquery/jquery.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/mousewheel/jquery.mousewheel.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/jquery/jquery-migrate.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/jquery/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/bootstrap/bootstrap.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/moment/moment.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/customscrollbar/jquery.mCustomScrollbar.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/vendor/bootstrap-datetimepicker/bootstrap-datetimepicker.js' %}"></script>
+    <!-- END IMPORTANT SCRIPTS -->
+    <!-- APP SCRIPTS -->
+    <script type="text/javascript" src="{% static 'credits/js/app.js' %}"></script>
+    <script type="text/javascript" src="{% static 'credits/js/app_plugins.js' %}"></script>
+    <!-- END APP SCRIPTS -->
+    <div class="app-settings">
+        <div class="app-settings-button"><span class="icon-magic-wand"></span></div>
+        <div class="app-settings-themes-header"><span>Header themes</span>
+            <div class="app-header-design-default active"></div>
+            <div class="app-header-design-dark"></div>
+            <div class="app-header-design-lightblue"></div>
+            <div class="app-header-design-orange"></div>
+            <div class="app-header-design-blue"></div>
+        </div>
+        <div class="app-settings-themes-navigation"><span>Navigation themes</span>
+            <div class="app-navigation-style-default active"></div>
+            <div class="app-navigation-style-light"></div>
+            <div class="app-navigation-style-lightblue"></div>
+            <div class="app-navigation-style-purple"></div>
+            <div class="app-navigation-style-blue"></div>
+        </div>
+        <div class="app-settings-themes-footer"><span>Footer themes</span>
+            <div class="app-footer-default active"></div>
+            <div class="app-footer-dark"></div>
+            <div class="app-footer-light"></div>
+            <div class="app-footer-purple"></div>
+            <div class="app-footer-blue"></div>
+        </div>
+        <p><span>Notice</span><br>It's easy to customize our template. Use /dev/css/<strong>variables.less</strong> file to
+            make Boooya more unique.</p>
+    </div>
+</body>
+</html>
