@@ -15,23 +15,21 @@
 <!-- START PAGE CONTAINER -->
 <div class="container">
     <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <!-- START LATEST TRANSACTIONS -->
             <div class="block block-condensed">
                 <div class="app-heading">
                     <div class="title">
-                        <h2>Latest Transactions</h2>
+                        <h2>ТОП-10 заемщиков (NPL)</h2>
                         <p>Quick information</p>
                     </div>
                     <div class="heading-elements"><button class="btn btn-default btn-icon-fixed"><span
-                                class="icon-file-add"></span> All Transactions</button></div>
+                                class="icon-file-add"></span> в Excel</button></div>
                 </div>
                 <div class="block-content">
-                    <div class="table-responsive">
-                        {{type}}
-                        <br>
-                        {{ mylist }}
-                    </div>
+                    
+                        {{ mylist | safe }}
+                    
                 </div>
             </div><!-- END LATEST TRANSACTIONS -->
         </div>
