@@ -3,6 +3,8 @@ from openpyxl import load_workbook
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
+from credits.models import ListReports, ReportData
+from datetime import datetime
 # Create your views here.
 
 npl_clients_list_yur = []
@@ -64,6 +66,85 @@ def label_race(row):
         if row['passport'] in (bad_loan_list_fiz) and row['yur_fiz'] == 'ФЛ':
             return 'Yes'
         return 'No'
+def upload(request):
+    c = ListReports.objects.create(REPORT_TITLE="JANUARY, 2020", REPORT_MONTH=1, REPORT_YEAR=2020, DATE_CREATED=datetime.now())
+    
+    data = pd.read_excel (r'media/excel/january.xlsx', 
+        dtype={"NN":'int32', "МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str'})
+    data.columns = [
+        'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 
+        'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
+        'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
+        'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
+        'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 
+        'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
+        'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
+        'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 
+        'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
+        'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
+        'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
+        'maliy_biznes', 'register_number', 'oked', 'code_contract']
+    data.code_contract = data.code_contract.astype('str')
+    data = data[:5]
+    for index, row in data.iterrows():
+        temp = row['code_contract']
+        oked = row['oked']
+        ReportData.objects.create(
+            NUMBER = row['number'],
+            CODE_REG = row['code_reg'], 
+            MFO = row['mfo'],
+            NAME_CLIENT = row['name_client'], 
+            BALANS_SCHET = row['balans_schet'], 
+            CREDIT_SCHET = row['credit_schet'], 
+            CODE_VAL= row['code_val'],
+            DATE_RESHENIYA= row['date_resheniya'],
+            SUM_DOG_NOM = row['sum_dog_nom'], 
+            SUM_DOG_EKV = row['sum_dog_ekv'], 
+            DATE_DOGOVOR = pd.to_datetime(row['date_dogovor']), 
+            DATE_FACTUAL = pd.to_datetime(row['date_factual']), 
+            DATE_POGASH = pd.to_datetime(row['date_pogash']), 
+            SROK= row['srok'],
+            DOG_NUMBER_DATE = row['dog_number_date'], 
+            CREDIT_PROCENT= row['credit_procent'],
+            PROSR_PROCENT = row['prosr_procent'], 
+            OSTATOK_CRED_SCHET= row['ostatok_cred_schet'],
+            OSTATOK_PERESM = row['ostatok_peresm'], 
+            DATE_PRODL= row['date_prodl'],
+            DATE_POGASH_POSLE_PRODL= pd.to_datetime(row['date_pogash_posle_prodl']),
+            OSTATOK_PROSR = row['ostatok_prosr'], 
+            DATE_OBRAZ_PROS = pd.to_datetime(row['date_obraz_pros']), 
+            OSTATOK_SUDEB = row['ostatok_sudeb'],
+            KOD_PRAVOXR_ORG = row['kod_pravoxr_org'], 
+            PRIZNAK_RESHENIYA = row['priznak_resheniya'], 
+            DATE_PRED_RESH = row['date_pred_resh'], 
+            VSEGO_ZADOLJENNOST = row['vsego_zadoljennost'], 
+            CLASS_KACHESTVA = row['class_kachestva'], 
+            OSTATOK_REZERV = row['ostatok_rezerv'], 
+            OSTATOK_NACH_PRCNT = row['ostatok_nach_prcnt'], 
+            OSTATOK_NACH_PROSR_PRCNT = row['ostatok_nach_prosr_prcnt'], 
+            OCENKA_OBESPECHENIYA = row['ocenka_obespecheniya'], 
+            OBESPECHENIE = row['obespechenie'], 
+            OPISANIE_OBESPECHENIE= row['opisanie_obespechenie'],
+            ISTOCHNIK_SREDTSVO = row['istochnik sredtsvo'], 
+            VID_KREDITOVANIYA  = row['vid_kreditovaniya'],  
+            PURPOSE_CREDIT = row['purpose_credit'], 
+            VISHEST_ORG_CLIENT= row['vishest_org_client'],
+            OTRASL_KREDITOVANIYA = row['otrasl_kreditovaniya'], 
+            OTRASL_CLIENTA = row['otrasl_clienta'], 
+            CLASS_KREDIT_SPOS = row['class_kredit_spos'], 
+            PREDSEDATEL_KB= row['predsedatel_kb'],
+            ADRESS_CLIENT = row['adress_client'], 
+            UN_NUMBER_CONTRACT = row['un_number_contract'], 
+            INN_PASSPORT = row['inn_passport'], 
+            OSTATOK_VNEB_PROSR = row['ostatok_vneb_prosr'], 
+            KONKR_NAZN_CREDIT= row['konkr_nazn_credit'],
+            BORROWER_TYPE = row['borrower_type'], 
+            SVYAZANNIY = row['svyazanniy'], 
+            MALIY_BIZNES = row['maliy_biznes'], 
+            REGISTER_NUMBER = row['register_number'], 
+            OKED = row['oked'],
+            REPORT=c)
+    
 
 def test(request):
     #wb = load_workbook(filename = 'media/excel/january.xlsx')
