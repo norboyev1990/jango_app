@@ -311,3 +311,6 @@ def test(request):
 
     context = {'mylist': top_prosr_clients.to_html(classes='table table-striped').replace('border="1"','border="0"')}
     return render(request, 'credits/test.html', context)
+def portfolio(request):
+    context = {'data': 1}
+    return render(request, 'credits/portfolio.html', context)

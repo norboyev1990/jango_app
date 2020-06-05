@@ -1,43 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    {% block title %}<title>Credits application</title>{% endblock %}<!-- META SECTION -->
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> {% block title %}
+    <title>Credits application</title>{% endblock %}
+    <!-- META SECTION -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <link rel="shortcut icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon"><!-- END META SECTION -->
+    <link rel="icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon">
+    <!-- END META SECTION -->
     <!-- Add additional CSS in static file -->
     {% load static %}
     <link rel="stylesheet" href="{% static 'credits/css/styles.css' %}" rel="stylesheet">
-    
+    <link rel="stylesheet" href="{% static 'credits/css/custom.css' %}" rel="stylesheet">
+
 </head>
+
 <body>
     <!-- APP WRAPPER -->
     <div class="app app-loaded">
         <!-- START APP CONTAINER -->
         <div class="app-container app-header-inside-content">
 
-            {% block sidebar %}{% include "includes/sidebar.html" %}{% endblock %}
-            
-            {% block app_content %}
+            {% block sidebar %}{% include "includes/sidebar.html" %}{% endblock %} {% block app_content %}
             <!-- START APP CONTENT -->
             <div class="app-content app-sidebar-left">
-                
-                {% block app_header %}{% include "includes/app_header.html" %}{% endblock %}
 
-                {% block page_header %}{% endblock %}
-                
-                {% block page_container %}{% endblock %}
+                {% block app_header %}{% include "includes/app_header.html" %}{% endblock %} {% block page_header %}{% endblock %} {% block page_container %}{% endblock %}
 
-            </div><!-- END APP CONTENT -->
+            </div>
+            <!-- END APP CONTENT -->
             {% endblock %}
-        </div><!-- END APP CONTAINER -->
-        {% block app_footer %}{% include "includes/app_footer.html" %}{% endblock %}
-        {% block side_panel %}{% include "includes/side_panel.html" %}{% endblock %}
+        </div>
+        <!-- END APP CONTAINER -->
+        {% block app_footer %}{% include "includes/app_footer.html" %}{% endblock %} {% block side_panel %}{% include "includes/side_panel.html" %}{% endblock %}
         <!-- APP OVERLAY -->
-        <div class="app-overlay"></div><!-- END APP OVERLAY -->
-    </div><!-- END APP WRAPPER -->
+        <div class="app-overlay"></div>
+        <!-- END APP OVERLAY -->
+    </div>
+    <!-- END APP WRAPPER -->
 
     <!-- IMPORTANT SCRIPTS -->
     <script type="text/javascript" src="{% static 'credits/js/vendor/jquery/jquery.min.js' %}"></script>
@@ -80,4 +82,5 @@
             make Boooya more unique.</p>
     </div> -->
 </body>
+
 </html>

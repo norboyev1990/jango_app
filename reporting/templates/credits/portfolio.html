@@ -1,0 +1,100 @@
+{% extends "includes/base_generic.html" %} {% load static %} {% block page_header %}
+<!-- START PAGE HEADING -->
+<div class="app-heading app-heading-bordered app-heading-page">
+    <div class="icon icon-lg"><span class="icon-laptop-phone"></span></div>
+    <div class="title">
+        <h1>Департамент управления банковскими рисками</h1>
+        <p>Асака банк</p>
+    </div>
+    <div class="heading-elements"></div>
+</div>
+<div class="app-heading-container app-heading-bordered bottom">
+    <ul class="breadcrumb">
+        <li><a href="http://boooya.aqvatarius.com/index.html#">Кредитный портфель</a></li>
+        <li class="active">В разбивке по выдачам и погашению</li>
+    </ul>
+</div>
+<!-- END PAGE HEADING -->
+{% endblock %} {% block page_container %}
+<!-- START PAGE CONTAINER -->
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="block block-condensed">
+                <!-- START HEADING -->
+                <div class="app-heading app-heading-small">
+                    <div class="title">
+                        <h5>В разбивке по выдачам и погашению</h5>
+                        <p>Кредитный портфель в разбивке по выдачам и погашению</p>
+                    </div>
+                    <div class="heading-elements"><button type="button" class="btn btn-default btn-icon-fixed dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="icon-calendar-full"></span> June 13, 2017 - July 14, 2017</button>
+                        <ul class="dropdown-menu dropdown-form dropdown-left">
+                            <li>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group margin-bottom-10"><label>From:</label>
+                                            <div class="input-group">
+                                                <div class="input-group-addon"><span class="icon-calendar-full"></span></div><input type="text" class="form-control bs-datepicker" value="13/06/2017"></div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group"><label>To:</label>
+                                            <div class="input-group">
+                                                <div class="input-group-addon"><span class="icon-calendar-full"></span></div><input type="text" class="form-control bs-datepicker" value="13/07/2017"></div>
+                                        </div>
+                                    </div>
+                                </div><button class="btn btn-primary btn-block">Confirm</button></li>
+                        </ul>
+                    </div>
+                </div>
+                <!-- END HEADING -->
+                <div class="table-responsive">
+                    <table class="table table-head-light table-striped">
+                        <thead>
+                            <tr>
+                                <th width="250">Показатели</th>
+                                <th width="250">01.02.2020</th>
+                                <th width="250">01.03.2020</th>
+                                <th width="250">Выдано за период</th>
+                                <th width="250">Погашено за период</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><label class="text-bolder text-primary">КП</label></td>
+                                <td>26 687 844</td>
+                                <td>26 946 709</td>
+                                <td>704 546 </td>
+                                <td>240 745 </td>
+                            </tr>
+                            <tr>
+                                <td><label class="text-bolder text-primary">Юридические лица (всего)</label></td>
+                                <td>23 133 338</td>
+                                <td>23 175998</td>
+                                <td>415 847 </td>
+                                <td>166 820 </td>
+                            </tr>
+                            <tr>
+                                <td><label class="text-bolder text-muted">Долгосрочные</label></td>
+                                <td>23 133 338</td>
+                                <td>23 175998</td>
+                                <td>415 847 </td>
+                                <td>166 820 </td>
+                            </tr>
+                            <tr>
+                                <td><label class="text-bolder text-muted">Краткосрочные</label></td>
+                                <td>23 133 338</td>
+                                <td>23 175998</td>
+                                <td>415 847 </td>
+                                <td>166 820 </td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- END PAGE CONTAINER -->
+{% endblock %}
