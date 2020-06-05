@@ -1,9 +1,7 @@
 *.swp
 __pycache__/
 
-
 env
 test
 temp.html
 db.sqlite3
-excel
