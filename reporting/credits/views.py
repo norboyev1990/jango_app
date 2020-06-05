@@ -66,6 +66,16 @@ def label_race(row):
         if row['passport'] in (bad_loan_list_fiz) and row['yur_fiz'] == 'ФЛ':
             return 'Yes'
         return 'No'
+def date_check(date):
+    res = None
+    if (pd.notnull(date)):
+        res = pd.to_datetime(date)
+    return res
+def number_check(number):
+    res = None
+    if (pd.notnull(number)):
+        res = number
+    return res
 def upload(request):
     c = ListReports.objects.create(REPORT_TITLE="JANUARY, 2020", REPORT_MONTH=1, REPORT_YEAR=2020, DATE_CREATED=datetime.now())
     
@@ -84,13 +94,12 @@ def upload(request):
         'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
         'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
         'maliy_biznes', 'register_number', 'oked', 'code_contract']
-    data.code_contract = data.code_contract.astype('str')
-    data = data[:5]
+    
+    #data = data[:]
     for index, row in data.iterrows():
-        temp = row['code_contract']
-        oked = row['oked']
+        
         ReportData.objects.create(
-            NUMBER = row['number'],
+            NUMBER = number_check(row['number']),
             CODE_REG = row['code_reg'], 
             MFO = row['mfo'],
             NAME_CLIENT = row['name_client'], 
@@ -98,31 +107,31 @@ def upload(request):
             CREDIT_SCHET = row['credit_schet'], 
             CODE_VAL= row['code_val'],
             DATE_RESHENIYA= row['date_resheniya'],
-            SUM_DOG_NOM = row['sum_dog_nom'], 
-            SUM_DOG_EKV = row['sum_dog_ekv'], 
-            DATE_DOGOVOR = pd.to_datetime(row['date_dogovor']), 
-            DATE_FACTUAL = pd.to_datetime(row['date_factual']), 
-            DATE_POGASH = pd.to_datetime(row['date_pogash']), 
-            SROK= row['srok'],
+            SUM_DOG_NOM = number_check(row['sum_dog_nom']), 
+            SUM_DOG_EKV = number_check(row['sum_dog_ekv']), 
+            DATE_DOGOVOR = date_check(row['date_dogovor']), 
+            DATE_FACTUAL = date_check(row['date_factual']), 
+            DATE_POGASH = date_check(row['date_pogash']), 
+            SROK = row['srok'],
             DOG_NUMBER_DATE = row['dog_number_date'], 
-            CREDIT_PROCENT= row['credit_procent'],
-            PROSR_PROCENT = row['prosr_procent'], 
-            OSTATOK_CRED_SCHET= row['ostatok_cred_schet'],
-            OSTATOK_PERESM = row['ostatok_peresm'], 
+            CREDIT_PROCENT= number_check(row['credit_procent']),
+            PROSR_PROCENT = number_check(row['prosr_procent']), 
+            OSTATOK_CRED_SCHET= number_check(row['ostatok_cred_schet']),
+            OSTATOK_PERESM = number_check(row['ostatok_peresm']), 
             DATE_PRODL= row['date_prodl'],
-            DATE_POGASH_POSLE_PRODL= pd.to_datetime(row['date_pogash_posle_prodl']),
-            OSTATOK_PROSR = row['ostatok_prosr'], 
-            DATE_OBRAZ_PROS = pd.to_datetime(row['date_obraz_pros']), 
-            OSTATOK_SUDEB = row['ostatok_sudeb'],
+            DATE_POGASH_POSLE_PRODL= date_check(row['date_pogash_posle_prodl']),
+            OSTATOK_PROSR = number_check(row['ostatok_prosr']), 
+            DATE_OBRAZ_PROS = date_check(row['date_obraz_pros']), 
+            OSTATOK_SUDEB = number_check(row['ostatok_sudeb']),
             KOD_PRAVOXR_ORG = row['kod_pravoxr_org'], 
             PRIZNAK_RESHENIYA = row['priznak_resheniya'], 
             DATE_PRED_RESH = row['date_pred_resh'], 
-            VSEGO_ZADOLJENNOST = row['vsego_zadoljennost'], 
+            VSEGO_ZADOLJENNOST = number_check(row['vsego_zadoljennost']), 
             CLASS_KACHESTVA = row['class_kachestva'], 
-            OSTATOK_REZERV = row['ostatok_rezerv'], 
-            OSTATOK_NACH_PRCNT = row['ostatok_nach_prcnt'], 
-            OSTATOK_NACH_PROSR_PRCNT = row['ostatok_nach_prosr_prcnt'], 
-            OCENKA_OBESPECHENIYA = row['ocenka_obespecheniya'], 
+            OSTATOK_REZERV = number_check(row['ostatok_rezerv']), 
+            OSTATOK_NACH_PRCNT = number_check(row['ostatok_nach_prcnt']), 
+            OSTATOK_NACH_PROSR_PRCNT = number_check(row['ostatok_nach_prosr_prcnt']), 
+            OCENKA_OBESPECHENIYA = number_check(row['ocenka_obespecheniya']), 
             OBESPECHENIE = row['obespechenie'], 
             OPISANIE_OBESPECHENIE= row['opisanie_obespechenie'],
             ISTOCHNIK_SREDTSVO = row['istochnik sredtsvo'], 
@@ -136,13 +145,14 @@ def upload(request):
             ADRESS_CLIENT = row['adress_client'], 
             UN_NUMBER_CONTRACT = row['un_number_contract'], 
             INN_PASSPORT = row['inn_passport'], 
-            OSTATOK_VNEB_PROSR = row['ostatok_vneb_prosr'], 
+            OSTATOK_VNEB_PROSR = number_check(row['ostatok_vneb_prosr']), 
             KONKR_NAZN_CREDIT= row['konkr_nazn_credit'],
             BORROWER_TYPE = row['borrower_type'], 
-            SVYAZANNIY = row['svyazanniy'], 
-            MALIY_BIZNES = row['maliy_biznes'], 
+            SVYAZANNIY = number_check(row['svyazanniy']), 
+            MALIY_BIZNES = number_check(row['maliy_biznes']), 
             REGISTER_NUMBER = row['register_number'], 
             OKED = row['oked'],
+            CODE_CONTRACT = row['code_contract'],
             REPORT=c)
     
 
