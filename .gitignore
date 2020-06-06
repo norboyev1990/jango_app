@@ -5,3 +5,4 @@ env
 test
 temp.html
 db.sqlite3
+excel/
