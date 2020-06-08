@@ -1,9 +1,12 @@
+from django_tables2 import SingleTableView
+from .tables import ReportDataTable
 from django.shortcuts import render
+from .models import ListReports, ReportData
+
 from openpyxl import load_workbook
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
-from credits.models import ListReports, ReportData
 from datetime import datetime
 # Create your views here.
 
@@ -159,9 +162,9 @@ def upload(request):
 def test(request):
     #wb = load_workbook(filename = 'media/excel/january.xlsx')
     #sheet_ranges = wb['report']
-    data = pd.read_excel (r'media/excel/january.xlsx', dtype={"МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str' })
-    data.columns = ['number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 'maliy_biznes', 'register_number', 'oked', 'code_conract']
-
+    # data = pd.read_excel (r'media/excel/january.xlsx', dtype={"МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str' })
+    data = pd.DataFrame(list(ReportData.objects.all().values()))
+    data.columns = ['id', 'report_id', 'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 'maliy_biznes', 'register_number', 'oked', 'code_conract']
     keys = ['00069','00073','00972','00120','01027','00140','00194','00206','01021','00231','00264','01004','00358','00373','00416',
             '00417','00873','00958','00963','00969','00411','00539','00631','00904','00971','00581','01169','00625']
 
@@ -312,5 +315,12 @@ def test(request):
     context = {'mylist': top_prosr_clients.to_html(classes='table table-striped').replace('border="1"','border="0"')}
     return render(request, 'credits/test.html', context)
 def portfolio(request):
-    context = {'data': 1}
+    query = 'SELECT ID, NAME_CLIENT, MFO, VSEGO_ZADOLJENNOST FROM CREDITS_REPORTDATA WHERE BALANS_SCHET = 15613'
+    table = ReportDataTable(ReportData.objects.raw(query))
+    context = {'table': table}
     return render(request, 'credits/portfolio.html', context)
+
+class ReportDataListView(SingleTableView):
+    model = ReportData
+    table_class = ReportDataTable
+    template_name = 'credits/report.html'

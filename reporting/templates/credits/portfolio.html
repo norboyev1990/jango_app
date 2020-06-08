@@ -1,4 +1,8 @@
-{% extends "includes/base_generic.html" %} {% load static %} {% block page_header %}
+{% extends "includes/base_generic.html" %} 
+{% load render_table from django_tables2 %}
+{% load static %} 
+
+{% block page_header %}
 <!-- START PAGE HEADING -->
 <div class="app-heading app-heading-bordered app-heading-page">
     <div class="icon icon-lg"><span class="icon-laptop-phone"></span></div>
@@ -15,7 +19,9 @@
     </ul>
 </div>
 <!-- END PAGE HEADING -->
-{% endblock %} {% block page_container %}
+{% endblock %} 
+
+{% block page_container %}
 <!-- START PAGE CONTAINER -->
 <div class="container">
     <div class="row">
@@ -49,48 +55,7 @@
                 </div>
                 <!-- END HEADING -->
                 <div class="table-responsive">
-                    <table class="table table-head-light table-striped">
-                        <thead>
-                            <tr>
-                                <th width="250">Показатели</th>
-                                <th width="250">01.02.2020</th>
-                                <th width="250">01.03.2020</th>
-                                <th width="250">Выдано за период</th>
-                                <th width="250">Погашено за период</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td><label class="text-bolder text-primary">КП</label></td>
-                                <td>26 687 844</td>
-                                <td>26 946 709</td>
-                                <td>704 546 </td>
-                                <td>240 745 </td>
-                            </tr>
-                            <tr>
-                                <td><label class="text-bolder text-primary">Юридические лица (всего)</label></td>
-                                <td>23 133 338</td>
-                                <td>23 175998</td>
-                                <td>415 847 </td>
-                                <td>166 820 </td>
-                            </tr>
-                            <tr>
-                                <td><label class="text-bolder text-muted">Долгосрочные</label></td>
-                                <td>23 133 338</td>
-                                <td>23 175998</td>
-                                <td>415 847 </td>
-                                <td>166 820 </td>
-                            </tr>
-                            <tr>
-                                <td><label class="text-bolder text-muted">Краткосрочные</label></td>
-                                <td>23 133 338</td>
-                                <td>23 175998</td>
-                                <td>415 847 </td>
-                                <td>166 820 </td>
-                            </tr>
-
-                        </tbody>
-                    </table>
+                    {% render_table table %}
                 </div>
             </div>
         </div>
