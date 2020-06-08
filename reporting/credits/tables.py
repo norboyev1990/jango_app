@@ -9,6 +9,6 @@ class ReportDataTable(tables.Table):
             'NAME_CLIENT', 
             'BRANCH_NAME', 
             'CLIENT_TYPE', 
-            'VSEGO_ZADOLJENNOST',
+            'LOAN_BALANCE',
             'CURRENCY'
             )

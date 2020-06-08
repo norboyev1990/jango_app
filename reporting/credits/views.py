@@ -318,14 +318,16 @@ def portfolio(request):
     query = '''SELECT RD.ID, RD.NAME_CLIENT, 
                     BR.NAME AS BRANCH_NAME,
                     CT.NAME AS CLIENT_TYPE, 
-                    RD.VSEGO_ZADOLJENNOST,
+                    SUM(RD.OSTATOK_NACH_PROSR_PRCNT) AS LOAN_BALANCE,
                     CU.NAME AS CURRENCY 
                 FROM CREDITS_REPORTDATA RD
                 LEFT JOIN CREDITS_BRANCH BR ON RD.MFO = BR.CODE
                 LEFT JOIN CREDITS_CLIENTTYPE CT ON RD.BALANS_SCHET = CT.CODE
                 LEFT JOIN CREDITS_CURRENCY CU ON RD.CODE_VAL = CU.CODE 
                 where ct.SUBJ = 'J'
-                LIMIT 100
+                GROUP BY RD.NAME_CLIENT, BR.CODE
+                ORDER BY LOAN_BALANCE DESC 
+                LIMIT 10
             '''
     table = ReportDataTable(ReportData.objects.raw(query))
     context = {'table': table}
