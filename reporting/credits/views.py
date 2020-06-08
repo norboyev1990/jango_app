@@ -315,21 +315,34 @@ def test(request):
     return render(request, 'credits/test.html', context)
 
 def portfolio(request):
-    query = '''SELECT RD.ID, RD.NAME_CLIENT, 
-                    BR.NAME AS BRANCH_NAME,
-                    CT.NAME AS CLIENT_TYPE, 
-                    SUM(RD.OSTATOK_NACH_PROSR_PRCNT) AS LOAN_BALANCE,
-                    CU.NAME AS CURRENCY 
-                FROM CREDITS_REPORTDATA RD
-                LEFT JOIN CREDITS_BRANCH BR ON RD.MFO = BR.CODE
-                LEFT JOIN CREDITS_CLIENTTYPE CT ON RD.BALANS_SCHET = CT.CODE
-                LEFT JOIN CREDITS_CURRENCY CU ON RD.CODE_VAL = CU.CODE 
-                where ct.SUBJ = 'J'
-                GROUP BY RD.NAME_CLIENT, BR.CODE
-                ORDER BY LOAN_BALANCE DESC 
-                LIMIT 10
+    query = '''WITH RECURSIVE 
+                UNIQUES(id, credit_schet) as (
+                    select t.id, SUBSTR(t.credit_schet,10,8)  from credits_reportdata t
+                    left join credits_clienttype ct on t.balans_schet = ct.code
+                    where (julianday('2020-01-01') - julianday(t.date_obraz_pros) > 90
+                        or t.ostatok_sudeb is not null or t.ostatok_vneb_prosr is not null)
+                        and ct.SUBJ = 'J'
+                    UNION
+                    select t2.id, UNIQUES.credit_schet from credits_reportdata t2, UNIQUES
+                    where SUBSTR(t2.credit_schet,10,8) = UNIQUES.credit_schet
+
+                    
+                )
+                SELECT RD.ID,
+                    UN.credit_schet UNIQUE_CODE,
+                    RD.NAME_CLIENT,
+                    SUM()
+                FROM UNIQUES UN
+                LEFT JOIN CREDITS_REPORTDATA RD ON RD.ID = UN.id
+                GROUP BY UN.credit_schet, RD.NAME_CLIENT
+                ORDER BY 
+                
+                    
+                
+                
             '''
     table = ReportDataTable(ReportData.objects.raw(query))
+    table.paginate(page=request.GET.get("page", 1), per_page=10)
     context = {'table': table}
     return render(request, 'credits/portfolio.html', context)
 
