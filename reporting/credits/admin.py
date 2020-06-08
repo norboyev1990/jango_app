@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import ListReports, ReportData
+from . import models
 # Register your models here.
-admin.site.register(ListReports)
-admin.site.register(ReportData)
+admin.site.register(models.ListReports)
+admin.site.register(models.ReportData)
+admin.site.register(models.Branch)
+admin.site.register(models.ClientType)
+admin.site.register(models.Currency)
+admin.site.register(models.Segment)

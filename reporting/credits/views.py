@@ -158,7 +158,6 @@ def upload(request):
             CODE_CONTRACT = row['code_contract'],
             REPORT=c)
     
-
 def test(request):
     #wb = load_workbook(filename = 'media/excel/january.xlsx')
     #sheet_ranges = wb['report']
@@ -314,8 +313,20 @@ def test(request):
 
     context = {'mylist': top_prosr_clients.to_html(classes='table table-striped').replace('border="1"','border="0"')}
     return render(request, 'credits/test.html', context)
+
 def portfolio(request):
-    query = 'SELECT ID, NAME_CLIENT, MFO, VSEGO_ZADOLJENNOST FROM CREDITS_REPORTDATA WHERE BALANS_SCHET = 15613'
+    query = '''SELECT RD.ID, RD.NAME_CLIENT, 
+                    BR.NAME AS BRANCH_NAME,
+                    CT.NAME AS CLIENT_TYPE, 
+                    RD.VSEGO_ZADOLJENNOST,
+                    CU.NAME AS CURRENCY 
+                FROM CREDITS_REPORTDATA RD
+                LEFT JOIN CREDITS_BRANCH BR ON RD.MFO = BR.CODE
+                LEFT JOIN CREDITS_CLIENTTYPE CT ON RD.BALANS_SCHET = CT.CODE
+                LEFT JOIN CREDITS_CURRENCY CU ON RD.CODE_VAL = CU.CODE 
+                where ct.SUBJ = 'J'
+                LIMIT 100
+            '''
     table = ReportDataTable(ReportData.objects.raw(query))
     context = {'table': table}
     return render(request, 'credits/portfolio.html', context)

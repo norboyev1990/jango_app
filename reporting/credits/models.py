@@ -14,7 +14,7 @@ class ReportData(models.Model):
     CODE_REG                = models.CharField(max_length=25)
     MFO                     = models.CharField(max_length=5)
     NAME_CLIENT             = models.CharField(max_length=255)
-    BALANS_SCHET            = models.CharField(max_length=20)
+    BALANS_SCHET            = models.CharField(max_length=20, null=True)
     CREDIT_SCHET            = models.CharField(max_length=20)
     DATE_RESHENIYA          = models.CharField(max_length=25)
     CODE_VAL                = models.CharField(max_length=25)
@@ -66,3 +66,44 @@ class ReportData(models.Model):
     CODE_CONTRACT           = models.CharField(max_length=255)
     def __str__(self):
         return self.NAME_CLIENT
+
+class Branch(models.Model):
+    CODE = models.CharField(max_length=5)
+    NAME = models.CharField(max_length=255)
+    def __str__(self):
+        return self.CODE + ' - ' + self.NAME
+
+class ClientType(models.Model):
+    CHOICES = (
+       ('ФЛ', ('Физические лица')),
+       ('ЮЛ', ('Юридические лица')),
+       ('ИП', ('Индивидуалные предприятия')),
+    )
+    SUBJECT = models.TextChoices('Subject', 'P J')
+    CODE = models.CharField(max_length=5)
+    NAME = models.CharField(choices=CHOICES, max_length=2, default='ФЛ')
+    SUBJ = models.CharField(choices=SUBJECT.choices, max_length=1, default='P')
+    def __str__(self):
+        return self.CODE + ' - ' + self.NAME
+
+class Currency(models.Model):
+    CODE = models.CharField(max_length=3)
+    NAME = models.CharField(max_length=3)
+    def __str__(self):
+        return self.CODE + ' - ' + self.NAME
+class Segment(models.Model):
+    CHOICES = (
+       ('Прочие', 'Прочие'),
+       ('ФЛ', 'ФЛ'),
+       ('Торговля', 'Торговля'),
+       ('Промышленность', 'Промышленность'),
+       ('Строительство', 'Строительство'),
+       ('Селськое хозяйство', 'Селськое хозяйство'),
+       ('ЖКХ', 'ЖКХ'),
+       ('Транспорт', 'Транспорт'),
+       ('Заготовки', 'Заготовки'),
+    )
+    CODE = models.CharField(max_length=2)
+    NAME = models.CharField(choices=CHOICES, max_length=255)
+    def __str__(self):
+        return self.CODE + ' - ' + self.NAME
