@@ -329,16 +329,14 @@ def portfolio(request):
                     
                 )
                 SELECT RD.ID,
-                    UN.credit_schet UNIQUE_CODE,
+                    UN.credit_schet AS UNIQUE_CODE,
                     RD.NAME_CLIENT,
-                    SUM()
+                    SUM(RD.VSEGO_ZADOLJENNOST) AS BALANCE
                 FROM UNIQUES UN
                 LEFT JOIN CREDITS_REPORTDATA RD ON RD.ID = UN.id
-                GROUP BY UN.credit_schet, RD.NAME_CLIENT
-                ORDER BY 
-                
-                    
-                
+                GROUP BY UNIQUE_CODE, RD.NAME_CLIENT, MFO
+                ORDER BY BALANCE DESC
+                LIMIT 10
                 
             '''
     table = ReportDataTable(ReportData.objects.raw(query))

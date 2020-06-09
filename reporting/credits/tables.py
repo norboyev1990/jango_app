@@ -8,5 +8,5 @@ class ReportDataTable(tables.Table):
         fields = ('id',
             'UNIQUE_CODE',
             'NAME_CLIENT', 
-            'CLIENT_TYPE', 
+            'BALANCE',
             )
