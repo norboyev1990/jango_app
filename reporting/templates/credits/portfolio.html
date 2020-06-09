@@ -1,8 +1,4 @@
-{% extends "includes/base_generic.html" %} 
-{% load render_table from django_tables2 %}
-{% load static %} 
-
-{% block page_header %}
+{% extends "includes/base_generic.html" %} {% load render_table from django_tables2 %} {% load static %} {% block page_header %}
 <!-- START PAGE HEADING -->
 <div class="app-heading app-heading-bordered app-heading-page">
     <div class="icon icon-lg"><span class="icon-laptop-phone"></span></div>
@@ -19,9 +15,7 @@
     </ul>
 </div>
 <!-- END PAGE HEADING -->
-{% endblock %} 
-
-{% block page_container %}
+{% endblock %} {% block page_container %}
 <!-- START PAGE CONTAINER -->
 <div class="container">
     <div class="row">
@@ -54,7 +48,7 @@
                     </div>
                 </div>
                 <!-- END HEADING -->
-                <div class="table-responsive">
+                <div class="block-content">
                     {% render_table table %}
                 </div>
             </div>
