@@ -315,29 +315,22 @@ def test(request):
     return render(request, 'credits/test.html', context)
 
 def portfolio(request):
-    query = '''WITH RECURSIVE 
-                UNIQUES(id, credit_schet) as (
-                    select t.id, SUBSTR(t.credit_schet,10,8)  from credits_reportdata t
-                    left join credits_clienttype ct on t.balans_schet = ct.code
-                    where (julianday('2020-01-01') - julianday(t.date_obraz_pros) > 90
-                        or t.ostatok_sudeb is not null or t.ostatok_vneb_prosr is not null)
-                        and ct.SUBJ = 'J'
-                    UNION
-                    select t2.id, UNIQUES.credit_schet from credits_reportdata t2, UNIQUES
-                    where SUBSTR(t2.credit_schet,10,8) = UNIQUES.credit_schet
-
-                    
-                )
-                SELECT RD.ID,
-                    UN.credit_schet AS UNIQUE_CODE,
-                    RD.NAME_CLIENT,
-                    SUM(RD.VSEGO_ZADOLJENNOST) AS BALANCE
-                FROM UNIQUES UN
-                LEFT JOIN CREDITS_REPORTDATA RD ON RD.ID = UN.id
-                GROUP BY UNIQUE_CODE, RD.NAME_CLIENT, MFO
-                ORDER BY BALANCE DESC
+    query = '''SELECT R.id, 
+                    SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE,  
+                    NAME_CLIENT AS BORROWER,
+                    B.NAME AS BRANCH_NAME,
+                    ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+                    JULIANDAY('2020-01-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                    SUM(OSTATOK_SUDEB) AS SUDEB,
+                    SUM(OSTATOK_VNEB_PROSR) AS PROSR
+                FROM CREDITS_REPORTDATA R
+                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                WHERE T.SUBJ LIKE 'J'
+                GROUP BY UNIQUE_CODE
+                HAVING DAY_COUNT > 90 OR SUDEB IS NOT NULL OR PROSR IS NOT NULL 
+                ORDER BY LOAN_BALANCE DESC
                 LIMIT 10
-                
             '''
     table = ReportDataTable(ReportData.objects.raw(query))
     table.paginate(page=request.GET.get("page", 1), per_page=10)

@@ -4,6 +4,7 @@ colorama==0.4.3
 cx-Oracle==7.3.0
 Django==3.0.6
 django-semantic-ui==1.2.3
+django-tables2==2.3.1
 et-xmlfile==1.0.1
 isort==4.3.21
 jdcal==1.4.1

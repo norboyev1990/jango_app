@@ -5,8 +5,9 @@ class ReportDataTable(tables.Table):
     class Meta:
         model = ReportData
         template_name = "django_tables2/bootstrap.html"
-        fields = ('id',
+        fields = (
             'UNIQUE_CODE',
-            'NAME_CLIENT', 
-            'BALANCE',
+            'BORROWER', 
+            'BRANCH_NAME',
+            'LOAN_BALANCE',
             )
