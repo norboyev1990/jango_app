@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/BankProjects/reporting/db.sqlite3" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="12370"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,10:mainauth_group"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="SQL 1">SELECT R.id, 
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/BankProjects/reporting/db.sqlite3" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="12370"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,10:mainauth_group"/><default_encoding codec=""/><browse_table_settings/></tab_browse><tab_sql><sql name="NPL">SELECT R.id, 
 	SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE,  
 	NAME_CLIENT AS BORROWER,
 	B.NAME AS BRANCH_NAME,
@@ -17,25 +17,63 @@ LIMIT 10
 
 
 
-</sql><sql name="SQL 2">WITH RECURSIVE 
-                UNIQUES(id, credit_schet) as (
-                    select t.id, SUBSTR(t.credit_schet,10,8)  from credits_reportdata t
-                    left join credits_clienttype ct on t.balans_schet = ct.code
-                    where (julianday('2020-01-01') - julianday(t.date_obraz_pros) &gt; 90
-                        or t.ostatok_sudeb is not null or t.ostatok_vneb_prosr is not null)
-                        and ct.SUBJ = 'J'
-                    UNION
-                    select t2.id, UNIQUES.credit_schet from credits_reportdata t2, UNIQUES
-                    where SUBSTR(t2.credit_schet,10,8) = UNIQUES.credit_schet
-
-                    
-                )
-                SELECT RD.ID,
-                    UN.credit_schet AS UNIQUE_CODE,
-                    RD.NAME_CLIENT,
-                    ROUND(SUM(RD.VSEGO_ZADOLJENNOST)/1000000,2) AS BALANCE
-                FROM UNIQUES UN
-                LEFT JOIN CREDITS_REPORTDATA RD ON RD.ID = UN.id
-                GROUP BY UNIQUE_CODE, RD.NAME_CLIENT, MFO
-                ORDER BY BALANCE DESC
-                LIMIT 10</sql><current_tab id="0"/></tab_sql></sqlb_project>
+</sql><sql name="NPL summa">SELECT SUM(LOAN_BALANCE) FROM (
+SELECT R.id, 
+	SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE,  
+	NAME_CLIENT AS BORROWER,
+	B.NAME AS BRANCH_NAME,
+	ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+	JULIANDAY('2020-01-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+	SUM(OSTATOK_SUDEB) AS SUDEB,
+	SUM(OSTATOK_VNEB_PROSR) AS PROSR
+FROM CREDITS_REPORTDATA R
+LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+WHERE T.SUBJ LIKE 'J'
+GROUP BY UNIQUE_CODE
+HAVING DAY_COUNT &gt; 90 OR SUDEB IS NOT NULL OR PROSR IS NOT NULL 
+ORDER BY LOAN_BALANCE DESC)
+</sql><sql name="ТОКСИЧНЫЕ">SELECT R.id, 
+	SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE, 
+	COUNT(*),
+	NAME_CLIENT AS BORROWER,
+	B.NAME AS BRANCH_NAME,
+	ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+	JULIANDAY('2020-01-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+	SUM(OSTATOK_SUDEB) AS SUDEB,
+	SUM(OSTATOK_VNEB_PROSR) AS PROSR,
+	SUM(OSTATOK_PERESM) AS PERESM
+FROM CREDITS_REPORTDATA R
+LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+GROUP BY UNIQUE_CODE, NAME_CLIENT
+HAVING PERESM IS NOT NULL and (DAY_COUNT &lt; 90 or DAY_COUNT IS NULL)  and PROSR IS NULL and SUDEB IS NULL
+ORDER BY LOAN_BALANCE DESC
+LIMIT 10</sql><sql name="ТОКСИЧНЫЕ summa">SELECT SUM(LOAN_BALANCE) FROM (
+SELECT R.id, 
+	SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE, 
+	COUNT(*),
+	NAME_CLIENT AS BORROWER,
+	B.NAME AS BRANCH_NAME,
+	ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+	JULIANDAY('2020-01-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+	SUM(OSTATOK_SUDEB) AS SUDEB,
+	SUM(OSTATOK_VNEB_PROSR) AS PROSR,
+	SUM(OSTATOK_PERESM) AS PERESM
+FROM CREDITS_REPORTDATA R
+LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+GROUP BY UNIQUE_CODE, NAME_CLIENT
+HAVING PERESM IS NOT NULL and (DAY_COUNT &lt; 90 or DAY_COUNT IS NULL)  and PROSR IS NULL and SUDEB IS NULL
+ORDER BY NAME_CLIENT)</sql><sql name="SQL 5">
+SELECT SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE,
+NAME_CLIENT, 
+OSTATOK_PERESM, 
+VSEGO_ZADOLJENNOST,
+JULIANDAY('2020-01-01') - JULIANDAY(DATE_OBRAZ_PROS) AS DAY_COUNT,
+OSTATOK_SUDEB,
+OSTATOK_VNEB_PROSR
+FROM credits_reportdata
+WHERE OSTATOK_PERESM IS NOT NULL 
+ORDER BY NAME_CLIENT</sql><sql name="SQL 8">SELECT SUM(VSEGO_ZADOLJENNOST)/1000000 FROM credits_reportdata
+WHERE SUBSTR(CREDIT_SCHET,10,8) =  '04530579'</sql><current_tab id="2"/></tab_sql></sqlb_project>
