@@ -315,26 +315,53 @@ def test(request):
     return render(request, 'credits/test.html', context)
 
 def portfolio(request):
-    query = '''SELECT R.id, 
-                    SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE,  
-                    NAME_CLIENT AS BORROWER,
-                    B.NAME AS BRANCH_NAME,
-                    ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
-                    JULIANDAY('2020-01-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
-                    SUM(OSTATOK_SUDEB) AS SUDEB,
-                    SUM(OSTATOK_VNEB_PROSR) AS PROSR
-                FROM CREDITS_REPORTDATA R
-                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                WHERE T.SUBJ LIKE 'J'
-                GROUP BY UNIQUE_CODE
-                HAVING DAY_COUNT > 90 OR SUDEB IS NOT NULL OR PROSR IS NOT NULL 
-                ORDER BY LOAN_BALANCE DESC
-                LIMIT 10
-            '''
+    if (request.GET.get('q') == 'toxic'):
+        page_title = 'Топ 10 токсичные кредиты'
+        query = '''SELECT R.id, 
+                        SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE, 
+                        COUNT(*),
+                        NAME_CLIENT AS BORROWER,
+                        B.NAME AS BRANCH_NAME,
+                        ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+                        JULIANDAY('2020-02-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                        SUM(OSTATOK_SUDEB) AS SUDEB,
+                        SUM(OSTATOK_VNEB_PROSR) AS PROSR,
+                        SUM(OSTATOK_PERESM) AS PERESM
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                    WHERE R.REPORT_ID = 82
+                    GROUP BY UNIQUE_CODE, NAME_CLIENT
+                    HAVING PERESM IS NOT NULL and (DAY_COUNT < 90 or DAY_COUNT IS NULL)  and PROSR IS NULL and SUDEB IS NULL
+                    ORDER BY LOAN_BALANCE DESC
+                    LIMIT 10
+                '''
+    else:
+        page_title = 'Топ 10 NPL клиенты'
+        query = '''SELECT R.id, 
+                        CASE T.SUBJ
+                            WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
+                            ELSE SUBSTR(INN_PASSPORT,11,9)
+                        END	AS UNIQUE_CODE,
+                        NAME_CLIENT AS BORROWER,
+                        B.NAME AS BRANCH_NAME,
+                        ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
+                        JULIANDAY('2020-02-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                        SUM(OSTATOK_SUDEB) AS SUDEB,
+                        SUM(OSTATOK_VNEB_PROSR) AS PROSR
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                    WHERE REPORT_id = 82
+                    GROUP BY UNIQUE_CODE
+                    HAVING DAY_COUNT > 90 OR SUDEB IS NOT NULL OR PROSR IS NOT NULL 
+                    ORDER BY LOAN_BALANCE DESC
+                    LIMIT 10
+                '''
+        
     table = ReportDataTable(ReportData.objects.raw(query))
     table.paginate(page=request.GET.get("page", 1), per_page=10)
-    context = {'table': table}
+    context = {'table': table, 'page_title': page_title}
     return render(request, 'credits/portfolio.html', context)
 
 class ReportDataListView(SingleTableView):
