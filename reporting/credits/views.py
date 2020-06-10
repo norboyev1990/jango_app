@@ -336,6 +336,24 @@ def portfolio(request):
                     ORDER BY LOAN_BALANCE DESC
                     LIMIT 10
                 '''
+    elif (request.GET.get('q') == 'prosr'):
+        page_title = 'Топ 10 просроченные кредиты'
+        query = '''SELECT R.id, 
+                        CASE T.SUBJ
+                            WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
+                            ELSE SUBSTR(INN_PASSPORT,11,9)
+                        END	AS UNIQUE_CODE,
+                        NAME_CLIENT AS BORROWER,
+                        B.NAME AS BRANCH_NAME,
+                        ROUND(SUM(OSTATOK_NACH_PROSR_PRCNT)/1000000, 2) AS LOAN_BALANCE
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                    WHERE REPORT_id = 82
+                    GROUP BY UNIQUE_CODE
+                    ORDER BY LOAN_BALANCE DESC
+                    LIMIT 10
+                '''
     else:
         page_title = 'Топ 10 NPL клиенты'
         query = '''SELECT R.id, 

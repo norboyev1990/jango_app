@@ -3,22 +3,22 @@
 <div class="app-heading app-heading-bordered app-heading-page">
     <div class="icon icon-lg"><span class="icon-laptop-phone"></span></div>
     <div class="title">
-        <h1>Департамент управления банковскими рисками</h1>
+        <h1>Кредитный портфель</h1>
         <p>Асака банк</p>
     </div>
     <div class="heading-elements"></div>
 </div>
 <div class="app-heading-container app-heading-bordered bottom">
     <ul class="breadcrumb">
-        <li><a href="http://boooya.aqvatarius.com/index.html#">Кредитный портфель</a></li>
-        <li class="active">В разбивке по выдачам и погашению</li>
+        <li><a href="{% url 'index' %}">Главная</a></li>
+        <li class="active">Кредитный портфель</li>
     </ul>
 </div>
 <!-- END PAGE HEADING -->
 {% endblock %} {% block page_container %}
 <!-- START PAGE SEPARATED CONTAINER -->
 <div class="app-content-separate app-content-separated-left">
-    <div class="app-content-separate-left" data-separate-control-height="true" style="height: 1024px;">
+    <div class="app-content-separate-left" data-separate-control-height="true" style="height: 600px;">
         <div class="app-content-separate-panel padding-20 visible-mobile">
             <div class="pull-left">
                 <h4 class="text-sm text-uppercase text-bolder margin-bottom-0">Visible On Mobile</h4>
@@ -38,8 +38,9 @@
                 </div>
             </div>
             <div class="list-group list-group-noborder">
-                <a href="{% url 'portfolio' %}?q=npl" class="list-group-item text-bold">Топ 10 NPL клиенты</a>
+                <a href="{% url 'portfolio' %}?q=npl" class="list-group-item active">Топ 10 NPL клиенты</a>
                 <a href="{% url 'portfolio' %}?q=toxic" class="list-group-item text-bold">Топ 10 токсичные кредиты</a>
+                <a href="{% url 'portfolio' %}?q=prosr" class="list-group-item text-bold">Топ 10 просроченные кредиты</a>
             </div>
             <div class="app-heading app-heading-small heading-transparent app-heading-condensed">
                 <div class="title">
@@ -47,7 +48,7 @@
                 </div>
             </div>
             <div class="list-group list-group-noborder">
-                <a href="#" class="list-group-item active">В разбивке по выдачам и погашению</a>
+                <a href="#" class="list-group-item text-bold">В разбивке по выдачам и погашению</a>
                 <a href="#" class="list-group-item text-bold">Показатели доходности</a>
                 <a href="#" class="list-group-item text-bold">В разбивке по срокам</a>
                 <a href="#" class="list-group-item text-bold">В разбивке по субъектам</a>
