@@ -13,3 +13,16 @@ class ReportDataTable(tables.Table):
             'BRANCH_NAME',
             'LOAN_BALANCE',
             )
+class OverallInfoTable(tables.Table):
+    class Meta:
+        model = ReportData
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-striped #table-bordered table-head-custom"}
+        orderable = False
+        fields = (
+            'REPORT_MONTH',
+            'SUMMA_NPL', 
+            'SUMMA_TOXIC',
+            'SUMMA_PROSR',
+            'SUMMA_REZERV',
+            )

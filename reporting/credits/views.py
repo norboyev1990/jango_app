@@ -1,5 +1,5 @@
 from django_tables2 import SingleTableView
-from .tables import ReportDataTable
+from .tables import ReportDataTable, OverallInfoTable
 from django.shortcuts import render
 from .models import ListReports, ReportData
 
@@ -354,6 +354,58 @@ def portfolio(request):
                     ORDER BY LOAN_BALANCE DESC
                     LIMIT 10
                 '''
+    elif (request.GET.get('q') == 'overall'):
+        page_title = 'Общие показатели'
+        query = '''WITH NPL (REPORT_MONTH, SUMMA_NPL) AS (
+                        SELECT REPORT_MONTH, ROUND(SUM(LOAN_BALANCE)/1000000,2) FROM (
+                            SELECT 
+                                L.REPORT_MONTH,
+                                CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
+                                JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                                SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+                            FROM CREDITS_REPORTDATA R
+                            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                            WHERE L.REPORT_MONTH in (4,3)
+                            GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+                            HAVING DAY_COUNT > 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
+                        )
+                        GROUP BY REPORT_MONTH
+                    ),
+                    
+                    TOXIC (REPORT_MONTH, SUMMA_TOXIC) AS (
+                        SELECT REPORT_MONTH, ROUND(SUM(LOAN_BALANCE)/1000000, 2) FROM (
+                            SELECT
+                                L.REPORT_MONTH,
+                                CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END AS UNIQUE_CODE,
+                                JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                                SUM(R.VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+                            FROM CREDITS_REPORTDATA R
+                            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                            WHERE L.REPORT_MONTH in (4,3)
+                            GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+                            HAVING SUM(R.OSTATOK_PERESM) IS NOT NULL AND (DAY_COUNT < 90 OR DAY_COUNT IS NULL)  
+                            AND SUM(R.OSTATOK_VNEB_PROSR) IS NULL AND SUM(R.OSTATOK_SUDEB) IS NULL
+                        )
+                        GROUP BY REPORT_MONTH
+                    )
+                SELECT RD.id, L.REPORT_MONTH, N.SUMMA_NPL, T.SUMMA_TOXIC,
+                ROUND(SUM(OSTATOK_PROSR)/1000000,2) AS SUMMA_PROSR,
+                ROUND(SUM(OSTATOK_REZERV)/1000000,2) AS SUMMA_REZERV
+                FROM CREDITS_REPORTDATA RD, NPL, TOXIC
+                LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = RD.REPORT_ID
+                LEFT JOIN NPL N ON N.REPORT_MONTH = L.REPORT_MONTH
+                LEFT JOIN TOXIC T ON T.REPORT_MONTH = L.REPORT_MONTH
+                WHERE L.REPORT_MONTH in (4,3)
+                GROUP BY L.REPORT_MONTH
+                '''
+        
+        table = OverallInfoTable(ReportData.objects.raw(query))
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title, 'type1':ReportData.objects.raw(query)}
+        return render(request, 'credits/portfolio.html', context)
     else:
         page_title = 'Топ 10 NPL клиенты'
         query = '''SELECT R.id, 

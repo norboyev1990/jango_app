@@ -48,6 +48,7 @@
                 </div>
             </div>
             <div class="list-group list-group-noborder">
+                <a href="{% url 'portfolio' %}?q=overall" class="list-group-item text-bold">Общие показатели</a>
                 <a href="#" class="list-group-item text-bold">В разбивке по выдачам и погашению</a>
                 <a href="#" class="list-group-item text-bold">Показатели доходности</a>
                 <a href="#" class="list-group-item text-bold">В разбивке по срокам</a>
@@ -63,7 +64,7 @@
             <div class="block">
                 <div class="app-heading app-heading-small">
                     <div class="title">
-                        <h2>{{page_title}}</h2>
+                        <h2>{{page_title}} {{type1}}</h2>
                         <p>This container used as content container</p>
                     </div>
                 </div>
