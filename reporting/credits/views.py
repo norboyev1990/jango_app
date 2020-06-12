@@ -2,7 +2,7 @@ from django_tables2 import SingleTableView
 from .tables import ReportDataTable, OverallInfoTable
 from django.shortcuts import render
 from .models import ListReports, ReportData
-
+from django.db import connection
 from openpyxl import load_workbook
 import pandas as pd
 from pandas import DataFrame
@@ -10,6 +10,18 @@ import numpy as np
 from datetime import datetime
 # Create your views here.
 
+class CursorByName():
+    def __init__(self, cursor):
+        self._cursor = cursor
+    
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        row = self._cursor.__next__()
+
+        return { description[0]: row[col] for col, description in enumerate(self._cursor.description) }
+        
 npl_clients_list_yur = []
 npl_clients_list_fiz = []
 sudeb_clients_list_yur = []
@@ -356,55 +368,89 @@ def portfolio(request):
                 '''
     elif (request.GET.get('q') == 'overall'):
         page_title = 'Общие показатели'
-        query = '''WITH NPL (REPORT_MONTH, SUMMA_NPL) AS (
-                        SELECT REPORT_MONTH, ROUND(SUM(LOAN_BALANCE)/1000000,2) FROM (
-                            SELECT 
-                                L.REPORT_MONTH,
-                                CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
-                                JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
-                                SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
-                            FROM CREDITS_REPORTDATA R
-                            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-                            WHERE L.REPORT_MONTH in (4,3)
-                            GROUP BY L.REPORT_MONTH, UNIQUE_CODE
-                            HAVING DAY_COUNT > 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
-                        )
-                        GROUP BY REPORT_MONTH
-                    ),
-                    
-                    TOXIC (REPORT_MONTH, SUMMA_TOXIC) AS (
-                        SELECT REPORT_MONTH, ROUND(SUM(LOAN_BALANCE)/1000000, 2) FROM (
-                            SELECT
-                                L.REPORT_MONTH,
-                                CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END AS UNIQUE_CODE,
-                                JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
-                                SUM(R.VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
-                            FROM CREDITS_REPORTDATA R
-                            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-                            WHERE L.REPORT_MONTH in (4,3)
-                            GROUP BY L.REPORT_MONTH, UNIQUE_CODE
-                            HAVING SUM(R.OSTATOK_PERESM) IS NOT NULL AND (DAY_COUNT < 90 OR DAY_COUNT IS NULL)  
-                            AND SUM(R.OSTATOK_VNEB_PROSR) IS NULL AND SUM(R.OSTATOK_SUDEB) IS NULL
-                        )
-                        GROUP BY REPORT_MONTH
-                    )
-                SELECT RD.id, L.REPORT_MONTH, N.SUMMA_NPL, T.SUMMA_TOXIC,
-                ROUND(SUM(OSTATOK_PROSR)/1000000,2) AS SUMMA_PROSR,
-                ROUND(SUM(OSTATOK_REZERV)/1000000,2) AS SUMMA_REZERV
-                FROM CREDITS_REPORTDATA RD, NPL, TOXIC
-                LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = RD.REPORT_ID
-                LEFT JOIN NPL N ON N.REPORT_MONTH = L.REPORT_MONTH
-                LEFT JOIN TOXIC T ON T.REPORT_MONTH = L.REPORT_MONTH
-                WHERE L.REPORT_MONTH in (4,3)
-                GROUP BY L.REPORT_MONTH
-                '''
+        cursor = connection.cursor()
+        cursor.execute('''WITH NPL_VIEW (REPORT_MONTH, SUMMA_NPL) AS (
+                                SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
+                                    SELECT 
+                                        L.REPORT_MONTH,
+                                        CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
+                                        JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                                        SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+                                    FROM CREDITS_REPORTDATA R
+                                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                                    WHERE L.REPORT_MONTH in (4,3)
+                                    GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+                                    HAVING DAY_COUNT > 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
+                                )
+                                GROUP BY REPORT_MONTH
+                            ),
+                            
+                            TOXIC_VIEW (REPORT_MONTH, SUMMA_TOXIC) AS (
+                                SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
+                                    SELECT
+                                        L.REPORT_MONTH,
+                                        CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END AS UNIQUE_CODE,
+                                        JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                                        SUM(R.VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+                                    FROM CREDITS_REPORTDATA R
+                                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                                    WHERE L.REPORT_MONTH in (4,3)
+                                    GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+                                    HAVING SUM(R.OSTATOK_PERESM) IS NOT NULL AND (DAY_COUNT < 90 OR DAY_COUNT IS NULL)  
+                                    AND SUM(R.OSTATOK_VNEB_PROSR) IS NULL AND SUM(R.OSTATOK_SUDEB) IS NULL
+                                )
+                                GROUP BY REPORT_MONTH
+                            )
+                        SELECT RD.id, 
+                            L.REPORT_MONTH, 
+                            SUM(VSEGO_ZADOLJENNOST)                 AS CREDIT,
+                            N.SUMMA_NPL                             AS NPL, 
+                            N.SUMMA_NPL / SUM(VSEGO_ZADOLJENNOST)   AS NPL_WEIGHT,
+                            T.SUMMA_TOXIC                           AS TOXIC,
+                            T.SUMMA_TOXIC / SUM(VSEGO_ZADOLJENNOST) AS TOXIC_WEIGHT,
+                            T.SUMMA_TOXIC + N.SUMMA_NPL             AS TOXIC_NPL,
+                            SUM(OSTATOK_REZERV)                     AS RESERVE,
+                            SUM(OSTATOK_REZERV) / (T.SUMMA_TOXIC + N.SUMMA_NPL) AS RESERVE_COATING,
+                            SUM(OSTATOK_PROSR)                      AS OVERDUE,
+                            SUM(OSTATOK_PROSR) / SUM(VSEGO_ZADOLJENNOST) AS OVERDUE_WEIGHT
+                        FROM CREDITS_REPORTDATA RD
+                        LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = RD.REPORT_ID
+                        LEFT JOIN NPL_VIEW N ON N.REPORT_MONTH = L.REPORT_MONTH
+                        LEFT JOIN TOXIC_VIEW T ON T.REPORT_MONTH = L.REPORT_MONTH
+                        WHERE L.REPORT_MONTH in (4,3)
+                        GROUP BY L.REPORT_MONTH''')
+        data = [2]
+        for row in CursorByName(cursor):
+            data.append(row)
         
-        table = OverallInfoTable(ReportData.objects.raw(query))
+        listCreditPortfolio = [
+            {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
+            {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT'],     "flag": True},
+            {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT'],   "flag": True},
+            {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
+            {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
+            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING'],"flag": True},
+            {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT'], "flag": True},
+        ]
+            
+        for item in listCreditPortfolio:
+            val1 = item['old_value']
+            val2 = item['new_value']
+            flag = 'flag' in item.keys()
+            item['old_value']  = '{:.1%}'.format(val1) if flag else int(val1 / 1000000)
+            item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
+            item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
+            item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
+            
+        table = OverallInfoTable(listCreditPortfolio)
         table.paginate(page=request.GET.get("page", 1), per_page=10)
-        context = {'table': table, 'page_title': page_title, 'type1':ReportData.objects.raw(query)}
+        context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context)
     else:
         page_title = 'Топ 10 NPL клиенты'

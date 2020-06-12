@@ -5,3 +5,7 @@
     font-size: 12px !important;
     text-transform: lowercase;
 }
+
+table.table-overall tr.even {
+    /*font-weight: bold;*/
+}
