@@ -1,5 +1,5 @@
 from django_tables2 import SingleTableView
-from .tables import ReportDataTable, OverallInfoTable
+from .tables import ReportDataTable, OverallInfoTable, ByTermTable, BySubjectTable
 from django.shortcuts import render
 from .models import ListReports, ReportData
 from django.db import connection
@@ -174,7 +174,7 @@ def test(request):
     #wb = load_workbook(filename = 'media/excel/january.xlsx')
     #sheet_ranges = wb['report']
     # data = pd.read_excel (r'media/excel/january.xlsx', dtype={"МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str' })
-    data = pd.DataFrame(list(ReportData.objects.all().values()))
+    data = pd.DataFrame(list(ReportData.objects.filter(REPORT_id=86).values()))
     data.columns = ['id', 'report_id', 'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 'maliy_biznes', 'register_number', 'oked', 'code_conract']
     keys = ['00069','00073','00972','00120','01027','00140','00194','00206','01021','00231','00264','01004','00358','00373','00416',
             '00417','00873','00958','00963','00969','00411','00539','00631','00904','00971','00581','01169','00625']
@@ -452,6 +452,749 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context)
+    
+    
+    elif (request.GET.get('q') == 'by_term'):
+        page_title = 'В разбивке по срокам'
+        cursor = connection.cursor()
+        cursor.execute('''WITH MYVIEW (ID, TERM, VSEGO_ZADOLJENNOST) AS (
+                            SELECT ID,
+                            CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                END	AS TERM,
+                                VSEGO_ZADOLJENNOST
+                            FROM credits_reportdata
+                            WHERE REPORT_id = 86
+                        )
+                            
+                        SELECT 
+                            CASE WHEN TERM <= 2 THEN '1_GROUP_2'
+                                WHEN TERM > 2 AND TERM <= 5 THEN '2_GROUP_2_5'
+                                WHEN TERM > 5 AND TERM <= 7 THEN '3_GROUP_5_7'
+                                WHEN TERM > 7 AND TERM <= 10 THEN '4_GROUP_7_10'
+                                ELSE '5_GROUP_10' END AS GROUPS,
+                            COUNT(ID) AS COUNT,
+                            ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 0) AS SUMMA	
+                        FROM MYVIEW
+                        GROUP BY GROUPS
+                        ORDER BY GROUPS DESC
+                    ''')
+        data = [8]
+        for row in CursorByName(cursor):
+            data.append(row)
+        
+        cursor.execute('''SELECT 
+                            CASE WHEN TERM <= 2 THEN '1_GROUP_2'
+                                WHEN TERM > 2 AND TERM <= 5 THEN '2_GROUP_2_5'
+                                WHEN TERM > 5 AND TERM <= 7 THEN '3_GROUP_5_7'
+                                WHEN TERM > 7 AND TERM <= 10 THEN '4_GROUP_7_10'
+                                ELSE '5_GROUP_10' END AS GROUPS,
+                            COUNT(ID) AS COUNT,
+                            ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 0) AS SUMMA	
+                        FROM (
+                            SELECT R2.* 
+                            FROM (
+                                    SELECT
+                                        CASE T.SUBJ WHEN 'J' 
+                                            THEN SUBSTR(CREDIT_SCHET,10,8)
+                                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                            END	AS UNIQUE_CODE
+                                    FROM credits_reportdata R
+                                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                    WHERE REPORT_id=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
+                                        OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
+                                    GROUP BY UNIQUE_CODE
+                                ) R1
+                            LEFT JOIN (
+                                    SELECT R.ID,
+                                        CASE WHEN T.SUBJ = 'J' 
+                                            THEN SUBSTR(CREDIT_SCHET,10,8)
+                                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                            END	AS UNIQUE_CODE,
+                                        CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                            THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                            ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                            END	AS TERM,
+                                        VSEGO_ZADOLJENNOST
+                                    FROM credits_reportdata R
+                                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                    WHERE REPORT_id = 86 
+                                ) R2 ON R2.UNIQUE_CODE = R1.UNIQUE_CODE
+                            )
+                        GROUP BY GROUPS
+                        ORDER BY GROUPS DESC
+                    ''')
+        data_npl = [8]
+        for row in CursorByName(cursor):
+            data_npl.append(row)
+
+        cursor.execute('''SELECT CASE WHEN TERM <= 2 THEN '1_GROUP_2'
+                                WHEN TERM > 2 AND TERM <= 5 THEN '2_GROUP_2_5'
+                                WHEN TERM > 5 AND TERM <= 7 THEN '3_GROUP_5_7'
+                                WHEN TERM > 7 AND TERM <= 10 THEN '4_GROUP_7_10'
+                                ELSE '5_GROUP_10' END AS GROUPS,
+                            ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 0) AS SUMMA
+                        FROM (
+                            SELECT R2.* 
+                            FROM (
+                                    SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE, 
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
+                                    SUM(OSTATOK_SUDEB) AS SUDEB,
+                                    SUM(OSTATOK_VNEB_PROSR) AS PROSR,
+                                    SUM(OSTATOK_PERESM) AS PERESM
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE R.REPORT_ID = 86
+                                GROUP BY UNIQUE_CODE, NAME_CLIENT
+                                HAVING PERESM IS NOT NULL and (DAY_COUNT < 90 or DAY_COUNT IS NULL)  and PROSR IS NULL and SUDEB IS NULL
+                                ) R1
+                            LEFT JOIN (
+                                    SELECT R.ID,
+                                    NAME_CLIENT,
+                                        CASE T.SUBJ WHEN 'J' 
+                                            THEN SUBSTR(CREDIT_SCHET,10,8)
+                                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                            END	AS UNIQUE_CODE,
+                                        CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                            THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                            ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                            END	AS TERM,
+                                        VSEGO_ZADOLJENNOST
+                                    FROM credits_reportdata R
+                                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                    WHERE REPORT_id = 86
+                                ) R2 ON R2.UNIQUE_CODE = R1.UNIQUE_CODE	
+                            )
+
+                        GROUP BY GROUPS
+                        ORDER BY GROUPS DESC
+                    ''')
+        data_tox = [8]
+        for row in CursorByName(cursor):
+            data_tox.append(row)
+
+        cursor.execute('''WITH MYVIEW (ID, TERM, OSTATOK_REZERV) AS (
+                            SELECT ID,
+                            CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                END	AS TERM,
+                                OSTATOK_REZERV
+                            FROM credits_reportdata
+                            WHERE REPORT_id = 86
+                        )
+                            
+                        SELECT 
+                            CASE WHEN TERM <= 2 THEN '1_GROUP_2'
+                                WHEN TERM > 2 AND TERM <= 5 THEN '2_GROUP_2_5'
+                                WHEN TERM > 5 AND TERM <= 7 THEN '3_GROUP_5_7'
+                                WHEN TERM > 7 AND TERM <= 10 THEN '4_GROUP_7_10'
+                                ELSE '5_GROUP_10' END AS GROUPS,
+                            COUNT(ID) AS COUNT,
+                            ROUND(SUM(OSTATOK_REZERV)/1000000, 0) AS SUMMA	
+                        FROM MYVIEW
+                        GROUP BY GROUPS
+                        ORDER BY GROUPS DESC
+                    ''')
+        data_rezerv = [8]
+        for row in CursorByName(cursor):
+            data_rezerv.append(row)
+            
+        listCreditPortfolio = [
+            {"name": "свыше 10 лет"},
+            {"name": "от 7-ми до 10 лет"},
+            {"name": "от 5-ти до 7 лет"},
+            {"name": "от 2-х до 5 лет"},
+            {"name": "до 2-х лет"},
+            {"name": "Итого"},
+        ]
+        
+        total_portfel   = sum(c['SUMMA'] for c in data[1:6])
+        total_npl       = sum(c['SUMMA'] for c in data_npl[1:6])
+        total_toxic     = sum(c['SUMMA'] for c in data_tox[1:6])
+        total_rezerv    = sum(c['SUMMA'] for c in data_rezerv[1:6])
+
+        for i in range(0,len(listCreditPortfolio)-1): 
+            listCreditPortfolio[i]['portfel']   = data[i+1]['SUMMA']
+            listCreditPortfolio[i]['ration']    = '{:.1%}'.format(data[i+1]['SUMMA']/total_portfel)
+            listCreditPortfolio[i]['npl']       = data_npl[i+1]['SUMMA']
+            listCreditPortfolio[i]['toxic']     = data_tox[i+1]['SUMMA']
+            listCreditPortfolio[i]['npl_toxic'] = data_npl[i+1]['SUMMA']+data_tox[i+1]['SUMMA']
+            listCreditPortfolio[i]['weight']    = '{:.1%}'.format(listCreditPortfolio[i]['npl_toxic']/listCreditPortfolio[i]['portfel'])
+            listCreditPortfolio[i]['rezerv']    = data_rezerv[i+1]['SUMMA']
+            listCreditPortfolio[i]['coating']   = '{:.1%}'.format(listCreditPortfolio[i]['rezerv']/listCreditPortfolio[i]['npl_toxic'])
+
+        
+        
+        listCreditPortfolio[5]['portfel']   = total_portfel
+        listCreditPortfolio[5]['ration']    = '100.0%'
+        listCreditPortfolio[5]['npl']       = total_npl
+        listCreditPortfolio[5]['toxic']     = total_toxic
+        listCreditPortfolio[5]['npl_toxic'] = total_npl + total_toxic
+        listCreditPortfolio[5]['weight']    = '{:.1%}'.format((total_npl + total_toxic)/total_portfel)
+        listCreditPortfolio[5]['rezerv']    = total_rezerv
+        listCreditPortfolio[5]['coating']   = '{:.1%}'.format(total_rezerv/(total_npl + total_toxic))
+
+
+        table = ByTermTable(listCreditPortfolio)
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title}
+        return render(request, 'credits/portfolio.html', context)
+    
+    elif (request.GET.get('q') == 'by_subject'):
+        page_title = 'В разбивке по субъектам'
+        cursor = connection.cursor()
+        cursor.execute('''WITH 
+                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
+                                SELECT 
+                                    CASE T.NAME 
+                                        WHEN 'ЮЛ' THEN 1 
+                                        WHEN 'ИП' THEN 2 
+                                        ELSE 3 END AS GROUPS,
+                                    T.NAME AS TITLE, 
+                                    SUM(VSEGO_ZADOLJENNOST)
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86
+                                GROUP BY GROUPS),
+                                
+                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
+                                SELECT 
+                                    CASE T.NAME 
+                                        WHEN 'ЮЛ' THEN 1 
+                                        WHEN 'ИП' THEN 2 
+                                        ELSE 3 END AS GROUPS,
+                                    VSEGO_ZADOLJENNOST, 
+                                    OSTATOK_REZERV,
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86),
+                                
+                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
+                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
+                                GROUP BY UNIQUE_CODE
+                            ),
+
+                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+
+                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE R.REPORT_ID = 86
+                                GROUP BY UNIQUE_CODE, NAME_CLIENT
+                                HAVING 
+                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
+                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
+                                    SUM(OSTATOK_SUDEB) IS NULL AND (
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
+                            ),
+
+                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+
+                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
+                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
+                                FROM REPORT_DATA_TABLE D
+                                GROUP BY GROUPS
+                            )
+
+                            SELECT *, 
+                            LOAN/TOTALS AS RATION,
+                            NPL_LOAN+TOX_LOAN AS TOX_NPL,
+                            (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                            RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
+                            FROM (	
+                            SELECT 
+                                M.TITLE,
+                                M.GROUPS,
+                                M.TOTAL_LOAN/1000000 AS LOAN,
+                                N.TOTAL_LOAN/1000000 AS NPL_LOAN,
+                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
+                                    THEN T.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS TOX_LOAN,
+                                R.TOTAL_RESERVE/1000000 AS RESERVE,
+                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
+                            FROM MAIN_TABLE M
+                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
+                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
+                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
+                            )
+                            ORDER BY GROUPS
+                    ''')
+        listBySegment = [5]
+        for row in CursorByName(cursor):
+            row['LOAN']     = int(row['LOAN'])
+            row['RATION']   = '{:.1%}'.format(row['RATION'])
+            row['NPL_LOAN'] = int(row['NPL_LOAN'])
+            row['TOX_LOAN'] = int(row['TOX_LOAN'])
+            row['TOX_NPL']  = int(row['TOX_NPL'])
+            row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+            row['RESERVE']  = int(row['RESERVE'])
+            row['COATING']  = '{:.1%}'.format(row['COATING'])
+            listBySegment.append(row) 
+        
+        total = {}
+        total['TITLE']    = 'Итого'
+        total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:6])
+        total['RATION']     = '100%' 
+        total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:6]) 
+        total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+        total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:6]) 
+        total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+        listBySegment.append(total)
+
+        table = BySubjectTable(listBySegment[1:5])
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title}
+        return render(request, 'credits/portfolio.html', context)
+
+    elif (request.GET.get('q') == 'by_segment'):
+        page_title = 'В разбивке по сегментам'
+        cursor = connection.cursor()
+        cursor.execute('''WITH 
+                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
+                                SELECT 
+                                    CASE WHEN T.SUBJ = 'J' THEN 
+                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
+                                        THEN 1 ELSE 2 END ELSE 3 
+                                        END	AS GROUPS,
+                                    CASE WHEN T.SUBJ = 'J' THEN 
+                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
+                                        THEN 'Инв. проект' ELSE 'ЮЛ' END ELSE 'ФЛ' 
+                                        END	AS TITLE,
+                                    SUM(VSEGO_ZADOLJENNOST)
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86
+                                GROUP BY GROUPS),
+                                
+                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
+                                SELECT 
+                                    CASE WHEN T.SUBJ = 'J' THEN 
+                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
+                                        THEN 1 ELSE 2 END ELSE 3 
+                                        END	AS GROUPS,
+                                    VSEGO_ZADOLJENNOST, 
+                                    OSTATOK_REZERV,
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86),
+                                
+                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
+                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
+                                GROUP BY UNIQUE_CODE
+                            ),
+                            
+                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE R.REPORT_ID = 86
+                                GROUP BY UNIQUE_CODE, NAME_CLIENT
+                                HAVING 
+                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
+                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
+                                    SUM(OSTATOK_SUDEB) IS NULL AND (
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
+                            ),
+                            
+                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+                            
+                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
+                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
+                                FROM REPORT_DATA_TABLE D
+                                GROUP BY GROUPS
+                            )
+                            
+                        SELECT *, 
+                        LOAN/TOTALS AS RATION,
+                        NPL_LOAN+TOX_LOAN AS TOX_NPL,
+                        (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                        RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
+                        FROM (	
+                            SELECT 
+                                M.TITLE,
+                                M.GROUPS,
+                                M.TOTAL_LOAN/1000000 AS LOAN,
+                                N.TOTAL_LOAN/1000000 AS NPL_LOAN,
+                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
+                                    THEN T.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS TOX_LOAN,
+                                R.TOTAL_RESERVE/1000000 AS RESERVE,
+                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
+                            FROM MAIN_TABLE M
+                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
+                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
+                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
+                        )
+                        ORDER BY GROUPS
+
+                    ''')
+        listBySegment = [5]
+        for row in CursorByName(cursor):
+            row['LOAN']     = int(row['LOAN'])
+            row['RATION']   = '{:.1%}'.format(row['RATION'])
+            row['NPL_LOAN'] = int(row['NPL_LOAN'])
+            row['TOX_LOAN'] = int(row['TOX_LOAN'])
+            row['TOX_NPL']  = int(row['TOX_NPL'])
+            row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+            row['RESERVE']  = int(row['RESERVE'])
+            row['COATING']  = '{:.1%}'.format(row['COATING'])
+            listBySegment.append(row) 
+        
+        total = {}
+        total['TITLE']      = 'Итого'
+        total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:6])
+        total['RATION']     = '100%' 
+        total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:6]) 
+        total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+        total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:6]) 
+        total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+        listBySegment.append(total)
+
+        table = BySubjectTable(listBySegment[1:5])
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title}
+        return render(request, 'credits/portfolio.html', context) 
+    
+    elif (request.GET.get('q') == 'by_currency'):
+        page_title = 'В разбивке по валютам'
+        cursor = connection.cursor()
+        cursor.execute('''WITH 
+                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
+                                SELECT 
+                                    CASE WHEN CODE_VAL == '000' 
+                                        THEN 1 ELSE 2 
+                                        END AS GROUPS,
+                                    CASE WHEN CODE_VAL == '000' 
+                                        THEN 'Национальная валюта'
+                                        ELSE 'Иностранная валюта' 
+                                        END AS TITLE,
+                                    SUM(VSEGO_ZADOLJENNOST)
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86
+                                GROUP BY GROUPS),
+                                
+                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
+                                SELECT 
+                                    CASE WHEN CODE_VAL == '000' 
+                                        THEN 1 ELSE 2 
+                                        END AS GROUPS,
+                                    VSEGO_ZADOLJENNOST, 
+                                    OSTATOK_REZERV,
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86),
+                                
+                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
+                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
+                                GROUP BY UNIQUE_CODE
+                            ),
+                            
+                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE R.REPORT_ID = 86
+                                GROUP BY UNIQUE_CODE, NAME_CLIENT
+                                HAVING 
+                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
+                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
+                                    SUM(OSTATOK_SUDEB) IS NULL AND (
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
+                            ),
+                            
+                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+                            
+                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
+                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
+                                FROM REPORT_DATA_TABLE D
+                                GROUP BY GROUPS
+                            )
+                            
+                        SELECT *, 
+                        LOAN/TOTALS AS RATION,
+                        NPL_LOAN+TOX_LOAN AS TOX_NPL,
+                        (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                        RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
+                        FROM (	
+                            SELECT 
+                                M.TITLE,
+                                M.GROUPS,
+                                M.TOTAL_LOAN/1000000 AS LOAN,
+                                N.TOTAL_LOAN/1000000 AS NPL_LOAN,
+                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
+                                    THEN T.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS TOX_LOAN,
+                                R.TOTAL_RESERVE/1000000 AS RESERVE,
+                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
+                            FROM MAIN_TABLE M
+                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
+                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
+                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
+                        )
+                        ORDER BY GROUPS
+                    ''')
+        listBySegment = [5]
+        for row in CursorByName(cursor):
+            row['LOAN']     = int(row['LOAN'])
+            row['RATION']   = '{:.1%}'.format(row['RATION'])
+            row['NPL_LOAN'] = int(row['NPL_LOAN'])
+            row['TOX_LOAN'] = int(row['TOX_LOAN'])
+            row['TOX_NPL']  = int(row['TOX_NPL'])
+            row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+            row['RESERVE']  = int(row['RESERVE'])
+            row['COATING']  = '{:.1%}'.format(row['COATING'])
+            listBySegment.append(row) 
+        
+        total = {}
+        total['TITLE']      = 'Итого'
+        total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:6])
+        total['RATION']     = '100%' 
+        total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:6]) 
+        total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:6]) 
+        total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+        total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:6]) 
+        total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+        listBySegment.append(total)
+
+        table = BySubjectTable(listBySegment[1:5])
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title}
+        return render(request, 'credits/portfolio.html', context) 
+
+    elif (request.GET.get('q') == 'by_branch'):
+        page_title = 'В разбивке по филиалам'
+        cursor = connection.cursor()
+        cursor.execute('''WITH 
+                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
+                                SELECT 
+                                    B.SORT AS GROUPS,
+                                    B.NAME AS TITLE, 
+                                    SUM(VSEGO_ZADOLJENNOST)
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                                WHERE REPORT_ID = 86
+                                GROUP BY GROUPS),
+                                
+                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
+                                SELECT 
+                                    B.SORT AS GROUPS,
+                                    VSEGO_ZADOLJENNOST, 
+                                    OSTATOK_REZERV,
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                                WHERE REPORT_ID = 86),
+                                
+                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
+                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
+                                GROUP BY UNIQUE_CODE
+                            ),
+
+                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+
+                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                                SELECT
+                                    CASE T.SUBJ WHEN 'J' 
+                                        THEN SUBSTR(CREDIT_SCHET,10,8)
+                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                        END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE R.REPORT_ID = 86
+                                GROUP BY UNIQUE_CODE, NAME_CLIENT
+                                HAVING 
+                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
+                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
+                                    SUM(OSTATOK_SUDEB) IS NULL AND (
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
+                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
+                            ),
+
+                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
+                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
+                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
+                                GROUP BY GROUPS
+                            ),
+
+                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
+                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
+                                FROM REPORT_DATA_TABLE D
+                                GROUP BY GROUPS
+                            )
+
+                            SELECT *, 
+                            LOAN/TOTALS AS RATION,
+                            NPL_LOAN+TOX_LOAN AS TOX_NPL,
+                            (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                            RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
+                            FROM (	
+                            SELECT 
+                                M.TITLE,
+                                M.GROUPS,
+                                CASE WHEN M.TOTAL_LOAN IS NOT NULL 
+                                    THEN M.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS LOAN,
+                                CASE WHEN N.TOTAL_LOAN IS NOT NULL 
+                                    THEN N.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS NPL_LOAN,
+                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
+                                    THEN T.TOTAL_LOAN/1000000
+                                    ELSE 0 END AS TOX_LOAN,
+                                CASE WHEN R.TOTAL_RESERVE IS NOT NULL 
+                                    THEN R.TOTAL_RESERVE/1000000
+                                    ELSE 0 END AS RESERVE,
+                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
+                            FROM MAIN_TABLE M
+                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
+                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
+                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
+                            )
+                            ORDER BY GROUPS
+                    ''')
+        listBySegment = [24]
+        for row in CursorByName(cursor):
+            row['LOAN']     = int(row['LOAN'])
+            row['RATION']   = '{:.1%}'.format(row['RATION'])
+            row['NPL_LOAN'] = int(row['NPL_LOAN'])
+            row['TOX_LOAN'] = int(row['TOX_LOAN'])
+            row['TOX_NPL']  = int(row['TOX_NPL'])
+            row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+            row['RESERVE']  = int(row['RESERVE'])
+            row['COATING']  = '{:.1%}'.format(row['COATING'])
+            listBySegment.append(row) 
+        
+        total = {}
+        total['TITLE']      = 'Итого'
+        total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:24])
+        total['RATION']     = '100%' 
+        total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:24]) 
+        total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:24]) 
+        total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:24]) 
+        total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+        total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:24]) 
+        total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+        listBySegment.append(total)
+
+        table = BySubjectTable(listBySegment[1:25])
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+        context = {'table': table, 'page_title': page_title}
+        return render(request, 'credits/portfolio.html', context) 
     else:
         page_title = 'Топ 10 NPL клиенты'
         query = '''SELECT R.id, 

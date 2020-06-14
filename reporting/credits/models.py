@@ -70,6 +70,7 @@ class ReportData(models.Model):
 class Branch(models.Model):
     CODE = models.CharField(max_length=5)
     NAME = models.CharField(max_length=255)
+    SORT = models.IntegerField(null=True)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
 

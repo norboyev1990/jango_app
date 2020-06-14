@@ -49,11 +49,11 @@
             </div>
             <div class="list-group list-group-noborder">
                 <a href="{% url 'portfolio' %}?q=overall" class="list-group-item text-bold">Общие показатели</a>
-                <a href="#" class="list-group-item text-bold">В разбивке по выдачам и погашению</a>
-                <a href="#" class="list-group-item text-bold">Показатели доходности</a>
-                <a href="#" class="list-group-item text-bold">В разбивке по срокам</a>
-                <a href="#" class="list-group-item text-bold">В разбивке по субъектам</a>
-                <a href="#" class="list-group-item text-bold">В разбивке по сегментам</a>
+                <a href="{% url 'portfolio' %}?q=by_term" class="list-group-item text-bold">В разбивке по срокам</a>
+                <a href="{% url 'portfolio' %}?q=by_subject" class="list-group-item text-bold">В разбивке по субъектам</a>
+                <a href="{% url 'portfolio' %}?q=by_segment" class="list-group-item text-bold">В разбивке по сегментам</a>
+                <a href="{% url 'portfolio' %}?q=by_currency" class="list-group-item text-bold">В разбивке по валютам</a>
+                <a href="{% url 'portfolio' %}?q=by_branch" class="list-group-item text-bold">В разбивке по филиалам</a>
             </div>
 
         </div>
