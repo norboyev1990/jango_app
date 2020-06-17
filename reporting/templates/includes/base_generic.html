@@ -5,19 +5,25 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> {% block title %}
     <title>Credits application</title>{% endblock %}
     <!-- META SECTION -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <link rel="shortcut icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon">
-    <link rel="icon" href="http://boooya.aqvatarius.com/favicon.ico" type="image/x-icon">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description">
+    <meta content="Coderthemes" name="author">
+    <!-- App favicon -->
+    <link rel="shortcut icon" href="https://coderthemes.com/hyper/saas/assets/images/favicon.ico">
     <!-- END META SECTION -->
+
     <!-- Add additional CSS in static file -->
     {% load static %}
-    <link rel="stylesheet" href="{% static 'credits/css/styles.css' %}" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'credits/css/custom.css' %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'hyper/assets/css/vendor/jquery-jvectormap-1.2.2.css' %}">
+    <link rel="stylesheet" href="{% static 'hyper/assets/css/icons.min.css' %}">
+    <link rel="stylesheet" href="{% static 'hyper/assets/css/app.min.css' %}" id="light-style">
+    <link rel="stylesheet" href="{% static 'hyper/assets/css/app-dark.min.css' %}" id="dark-style" disabled="disabled">
+    <link rel="stylesheet" href="{% static 'hyper/assets/css/vendor/pages/demo.dashboards.css' %}">
 
 </head>
 
-<body>
+<body class="" data-layout-config="{&quot;leftSideBarTheme&quot;:&quot;dark&quot;,&quot;layoutBoxed&quot;:false, &quot;leftSidebarCondensed&quot;:false, &quot;leftSidebarScrollable&quot;:false,&quot;darkMode&quot;:false, &quot;showRightSidebarOnStart&quot;: true}"
+    data-leftbar-theme="dark">
     <!-- APP WRAPPER -->
     <div class="app app-loaded">
         <!-- START APP CONTAINER -->

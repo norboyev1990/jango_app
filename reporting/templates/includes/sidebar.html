@@ -1,47 +1,86 @@
-<!-- START SIDEBAR -->
-<div class="app-sidebar app-navigation app-navigation-fixed scroll app-navigation-style-default app-navigation-custom app-navigation-open-hover dir-left mCustomScrollbar _mCS_1 mCS-autoHide app-navigation-fixed-absolute" data-type="close-other" style="height: 1228px;">
-    <div id="mCSB_1" class="mCustomScrollBox mCS-light mCSB_vertical mCSB_inside" style="max-height: none;" tabindex="0">
-        <div id="mCSB_1_container" class="mCSB_container" style="position:relative; top:0; left:0;" dir="ltr"><a href="http://boooya.aqvatarius.com/index.html" class="app-navigation-logo active">Boooya - Revolution
-                Admin Template <button class="app-navigation-logo-button mobile-hidden"
-                    data-sidepanel-toggle=".app-sidepanel"><span class="icon-alarm"></span> <span
-                        class="app-navigation-logo-button-alert">7</span></button></a>
-            <nav>
-                <ul>
-                    <li class="title">ДЕМОНСТРАЦИЯ</li>
-                    <li class="openable">
-                        <a href="#"><span class="nav-icon-hexa">Об</span> Обзор 
-                            <span class="label label-success label-bordered label-ghost">new</span></a>
-                        <ul>
-                            <li><a href="#"><span class="nav-icon-hexa">Пк</span> Показатели</a></li>
-                            <li><a href="#"><span class="nav-icon-hexa">Дг</span> Диаграммы </a></li>
-                        </ul>
-                    </li>
+{% load static %}
+<div class="left-side-menu mm-show">
 
-                    <li class="title">ОТЧЁТЫ</li>
-                    <li>
-                        <a href="{% url 'portfolio' %}"><span class="nav-icon-hexa">Кп</span> Кредитный портфель
-                            <span class="label label-warning label-bordered label-ghost">process</span></a>
-                    </li>
-                    <li>
-                        <a href="#"><span class="nav-icon-hexa">Vd</span> Резервы
-                            <span class="label label-success label-bordered label-ghost">new</span></a>
-                    </li>
-                    <li>
-                        <a href="#"><span class="nav-icon-hexa">Ma</span> Депозиты
-                            <span class="label label-success label-bordered label-ghost">new</span></a>
-                    </li>
-                </ul>
-            </nav>
-        </div>
+    <!-- LOGO -->
+    <a href="{% url 'index' %}" class="logo text-center logo-light">
+        <span class="logo-lg">
+            <img src="{% static 'hyper/assets/images/logo.png'%}" alt="" height="16">
+        </span>
+        <span class="logo-sm">
+            <img src="{% static 'hyper/assets/images/logo_sm.png'%}" alt="" height="16">
+        </span>
+    </a>
 
-        <div id="mCSB_1_scrollbar_vertical" class="mCSB_scrollTools mCSB_1_scrollbar mCS-light mCSB_scrollTools_vertical" style="display: block;">
-            <div class="mCSB_draggerContainer">
-                <div id="mCSB_1_dragger_vertical" class="mCSB_dragger" style="position: absolute; min-height: 30px; height: 1009px; top: 0px; display: block; max-height: 1218px;">
-                    <div class="mCSB_dragger_bar" style="line-height: 30px;"></div>
-                </div>
-                <div class="mCSB_draggerRail"></div>
+
+    <div class="h-100 mm-active" id="left-side-menu-container" data-simplebar="init">
+        <div class="simplebar-wrapper" style="margin: 0px;">
+            <div class="simplebar-height-auto-observer-wrapper">
+                <div class="simplebar-height-auto-observer"></div>
             </div>
+            <div class="simplebar-mask">
+                <div class="simplebar-offset" style="right: 0px; bottom: 0px;">
+                    <div class="simplebar-content-wrapper" style="height: 100%; overflow: hidden scroll;">
+                        <div class="simplebar-content" style="padding: 0px;">
+
+                            <!--- Sidemenu -->
+                            <ul class="metismenu side-nav mm-show">
+
+                                <li class="side-nav-title side-nav-item">Навигация</li>
+
+                                <li class="side-nav-item">
+                                    <a href="{% url 'index' %}" class="side-nav-link">
+                                        <i class="uil-home-alt"></i>
+                                        <span> Главная </span>
+                                    </a>
+                                </li>
+
+
+                                <li class="side-nav-title side-nav-item">Отчёты</li>
+
+                                <li class="side-nav-item">
+                                    <a href="{% url 'npl-list' %}" class="side-nav-link">
+                                        <i class="uil-package"></i>
+                                        <span> Кредитный портфель </span>
+                                    </a>
+                                </li>
+
+                                <li class="side-nav-item">
+                                    <a href="#" class="side-nav-link">
+                                        <i class="uil-layer-group"></i>
+                                        <span> Резервы </span>
+                                    </a>
+                                </li>
+
+                            </ul>
+
+                            <!-- Help Box -->
+                            <div class="help-box text-white text-center">
+                                <a href="javascript: void(0);" class="float-right close-btn text-white">
+                                    <i class="mdi mdi-close"></i>
+                                </a>
+                                <img src="{% static 'hyper/assets/images/help-icon.svg'%}" height="90" alt="Helper Icon Image">
+                                <h5 class="mt-3">Unlimited Access</h5>
+                                <p class="mb-3">Upgrade to plan to get access to unlimited reports</p>
+                                <a href="javascript: void(0);" class="btn btn-outline-light btn-sm">Upgrade</a>
+                            </div>
+                            <!-- end Help Box -->
+                            <!-- End Sidebar -->
+
+                            <div class="clearfix"></div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="simplebar-placeholder" style="width: auto; height: 1570px;"></div>
+        </div>
+        <div class="simplebar-track simplebar-horizontal" style="visibility: hidden;">
+            <div class="simplebar-scrollbar" style="width: 0px; display: none;"></div>
+        </div>
+        <div class="simplebar-track simplebar-vertical" style="visibility: visible;">
+            <div class="simplebar-scrollbar" style="height: 59px; transform: translate3d(0px, 0px, 0px); display: block;"></div>
         </div>
     </div>
+    <!-- Sidebar -left -->
+
 </div>
-<!-- END SIDEBAR -->

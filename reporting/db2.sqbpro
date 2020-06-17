@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/BankProjects/reporting/db.sqlite3" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="12370"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,16:maincredits_currency"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="credits_branch" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="42"/><column index="3" value="118"/><column index="4" value="41"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_currency" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="41"/><column index="3" value="44"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_reportdata" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="42"/><column index="2" value="59"/><column index="3" value="73"/><column index="4" value="42"/><column index="5" value="300"/><column index="6" value="147"/><column index="7" value="130"/><column index="8" value="75"/><column index="9" value="105"/><column index="10" value="101"/><column index="11" value="111"/><column index="12" value="105"/><column index="13" value="101"/><column index="14" value="109"/><column index="15" value="134"/><column index="16" value="117"/><column index="17" value="115"/><column index="18" value="154"/><column index="19" value="124"/><column index="20" value="91"/><column index="21" value="198"/><column index="22" value="117"/><column index="23" value="134"/><column index="24" value="114"/><column index="25" value="139"/><column index="26" value="143"/><column index="27" value="123"/><column index="28" value="152"/><column index="29" value="133"/><column index="30" value="122"/><column index="31" value="157"/><column index="32" value="208"/><column index="33" value="169"/><column index="34" value="300"/><column index="35" value="300"/><column index="36" value="164"/><column index="37" value="300"/><column index="38" value="300"/><column index="39" value="300"/><column index="40" value="300"/><column index="41" value="300"/><column index="42" value="143"/><column index="43" value="120"/><column index="44" value="300"/><column index="45" value="157"/><column index="46" value="140"/><column index="47" value="157"/><column index="48" value="300"/><column index="49" value="300"/><column index="50" value="91"/><column index="51" value="101"/><column index="52" value="127"/><column index="53" value="300"/><column index="54" value="115"/><column index="55" value="76"/><column index="56" value="106"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="По проц. ставка (UZS)">WITH RECURSIVE
+	MAIN_TABLE (GROUPS, TITLE) AS (
+		SELECT 1, '20 и более'
+		UNION
+		SELECT GROUPS + 1,
+			CASE GROUPS +1
+				WHEN 2 THEN '16 - 20' 
+				WHEN 3 THEN '11 - 15' 
+				WHEN 4 THEN '6 - 10' 
+				ELSE '0 - 5' END AS TITLE	
+		FROM MAIN_TABLE LIMIT 5),
+		
+	REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST, UNIQUE_CODE) AS (
+		SELECT 
+			CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+				WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+				WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+				WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+				ELSE 5 END AS GROUPS,
+			T.SUBJ,
+			SROK,
+			VSEGO_ZADOLJENNOST, 
+			CASE WHEN T.SUBJ = 'J' 
+			THEN SUBSTR(CREDIT_SCHET,10,8)
+			ELSE SUBSTR(INN_PASSPORT,11,9) 
+			END	AS UNIQUE_CODE
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		WHERE REPORT_ID = 86 AND CODE_VAL = '000'),
+
+	UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3%'
+		GROUP BY GROUPS
+	),
+	
+	UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1%'
+		GROUP BY GROUPS
+	),
+	
+	FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3%'
+		GROUP BY GROUPS
+	),
+	
+	FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1%'
+		GROUP BY GROUPS
+	)
+--SELECT * FROM UL_SHORT_TABLE	
+
+SELECT 
+	M.TITLE,
+	M.GROUPS,
+	ULL.TOTAL_LOAN AS UL_LONG,
+	ULS.TOTAL_LOAN AS UL_SHORT,
+	FLL.TOTAL_LOAN AS FL_LONG,
+	FLS.TOTAL_LOAN AS FL_SHORT
+FROM MAIN_TABLE M
+LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+ORDER BY M.GROUPS DESC</sql><sql name="По проц. ставка (USD, EUR,JPY)">WITH RECURSIVE
+	MAIN_TABLE (GROUPS, TITLE) AS (
+		SELECT 1, '20 и более'
+		UNION
+		SELECT GROUPS + 1,
+			CASE GROUPS +1
+				WHEN 2 THEN '16 - 20' 
+				WHEN 3 THEN '11 - 15' 
+				WHEN 4 THEN '6 - 10' 
+				ELSE '0 - 5' END AS TITLE	
+		FROM MAIN_TABLE LIMIT 5),
+		
+	REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST, UNIQUE_CODE) AS (
+		SELECT 
+			CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+				WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+				WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+				WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+				ELSE 5 END AS GROUPS,
+			T.SUBJ,
+			SROK,
+			VSEGO_ZADOLJENNOST, 
+			CASE WHEN T.SUBJ = 'J' 
+			THEN SUBSTR(CREDIT_SCHET,10,8)
+			ELSE SUBSTR(INN_PASSPORT,11,9) 
+			END	AS UNIQUE_CODE
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		WHERE REPORT_ID = 86 AND CODE_VAL &lt;&gt; '000'),
+
+	UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3%'
+		GROUP BY GROUPS
+	),
+	
+	UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1%'
+		GROUP BY GROUPS
+	),
+	
+	FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3%'
+		GROUP BY GROUPS
+	),
+	
+	FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1%'
+		GROUP BY GROUPS
+	)
+--SELECT * FROM UL_SHORT_TABLE	
+
+SELECT 
+	M.TITLE,
+	M.GROUPS,
+	ULL.TOTAL_LOAN/1000000 AS UL_LONG,
+	ULS.TOTAL_LOAN/1000000 AS UL_SHORT,
+	FLL.TOTAL_LOAN/1000000 AS FL_LONG,
+	FLS.TOTAL_LOAN/1000000 AS FL_SHORT
+FROM MAIN_TABLE M
+LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+ORDER BY M.GROUPS DESC</sql><sql name="По сроком для ЮЛ(UZS)">WITH RECURSIVE
+	MAIN_TABLE (GROUPS, TITLE) AS (
+		SELECT 1, '20 и более'
+		UNION
+		SELECT GROUPS + 1,
+			CASE GROUPS +1
+				WHEN 2 THEN '16 - 20' 
+				WHEN 3 THEN '11 - 15' 
+				WHEN 4 THEN '6 - 10' 
+				ELSE '0 - 5' END AS TITLE	
+		FROM MAIN_TABLE LIMIT 5),
+		
+	REPORT_DATA_TABLE (GROUPS, TERM, VSEGO_ZADOLJENNOST) AS (
+		SELECT 
+			CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+				WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+				WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+				WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+				ELSE 5 END AS GROUPS,
+			CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+				THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+				ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+				END	AS TERM,
+			VSEGO_ZADOLJENNOST
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		WHERE T.SUBJ = 'J' AND REPORT_ID = 86 AND CODE_VAL = '000'),
+
+	TERMLESS_2 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 2 OR TERM IS NULL
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_5 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 5 AND TERM &gt; 2
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_7 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 7 AND TERM &gt; 5
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_10 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 10 AND TERM &gt; 7
+		GROUP BY GROUPS
+	),
+	
+	TERMMORE_10 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &gt; 10
+		GROUP BY GROUPS
+	)
+--SELECT * FROM UL_SHORT_TABLE	
+
+SELECT 
+	M.TITLE,
+	M.GROUPS,
+	T2.TOTAL_LOAN/1000000 AS T2_LOAN,
+	T5.TOTAL_LOAN/1000000 AS T5_LOAN,
+	T7.TOTAL_LOAN/1000000 AS T7_LOAN,
+	T10.TOTAL_LOAN/1000000 AS T10_LOAN,
+	T11.TOTAL_LOAN/1000000 AS T11_LOAN
+FROM MAIN_TABLE M
+LEFT JOIN TERMLESS_2 T2  ON T2.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_5 T5  ON T5.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_7 T7  ON T7.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_10 T10  ON T10.GROUPS = M.GROUPS
+LEFT JOIN TERMMORE_10 T11  ON T11.GROUPS = M.GROUPS
+ORDER BY M.GROUPS DESC</sql><sql name="По сроком для ЮЛ(USD,EUR,JPY)">WITH RECURSIVE
+	MAIN_TABLE (GROUPS, TITLE) AS (
+		SELECT 1, '20 и более'
+		UNION
+		SELECT GROUPS + 1,
+			CASE GROUPS +1
+				WHEN 2 THEN '16 - 20' 
+				WHEN 3 THEN '11 - 15' 
+				WHEN 4 THEN '6 - 10' 
+				ELSE '0 - 5' END AS TITLE	
+		FROM MAIN_TABLE LIMIT 5),
+		
+	REPORT_DATA_TABLE (GROUPS, TERM, VSEGO_ZADOLJENNOST) AS (
+		SELECT 
+			CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+				WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+				WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+				WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+				ELSE 5 END AS GROUPS,
+			CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+				THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+				ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+				END	AS TERM,
+			VSEGO_ZADOLJENNOST
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		WHERE T.SUBJ = 'J' AND REPORT_ID = 86 AND CODE_VAL &lt;&gt; '000'),
+
+	TERMLESS_2 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 2 OR TERM IS NULL
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_5 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 5 AND TERM &gt; 2
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_7 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 7 AND TERM &gt; 5
+		GROUP BY GROUPS
+	),
+	
+	TERMLESS_10 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &lt;= 10 AND TERM &gt; 7
+		GROUP BY GROUPS
+	),
+	
+	TERMMORE_10 (GROUPS, TOTAL_LOAN) AS (
+		SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE TERM &gt; 10
+		GROUP BY GROUPS
+	)
+--SELECT * FROM UL_SHORT_TABLE	
+
+SELECT 
+	M.TITLE,
+	M.GROUPS,
+	T2.TOTAL_LOAN/1000000 AS T2_LOAN,
+	T5.TOTAL_LOAN/1000000 AS T5_LOAN,
+	T7.TOTAL_LOAN/1000000 AS T7_LOAN,
+	T10.TOTAL_LOAN/1000000 AS T10_LOAN,
+	T11.TOTAL_LOAN/1000000 AS T11_LOAN
+FROM MAIN_TABLE M
+LEFT JOIN TERMLESS_2 T2  ON T2.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_5 T5  ON T5.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_7 T7  ON T7.GROUPS = M.GROUPS
+LEFT JOIN TERMLESS_10 T10  ON T10.GROUPS = M.GROUPS
+LEFT JOIN TERMMORE_10 T11  ON T11.GROUPS = M.GROUPS
+ORDER BY M.GROUPS DESC</sql><sql name="Средневз. проц. ставка(ЮЛ)">WITH
+	MAIN_TABLE (GROUPS, TITLE) AS (
+		SELECT 1, 'Долгосрочные'
+		UNION
+		SELECT 2, 'Краткосрочные'
+	),
+		
+	REPORT_DATA_TABLE (GROUPS, NAME_VALUTA, SUM_CREDIT, VSEGO_ZADOLJENNOST) AS (
+		SELECT 
+			CASE WHEN SUBSTR(SROK,1,1) = '3' 
+				THEN 1 ELSE 2 END AS GROUPS,
+			C.NAME,
+			CREDIT_PROCENT * VSEGO_ZADOLJENNOST,
+			VSEGO_ZADOLJENNOST
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		LEFT JOIN CREDITS_CURRENCY C ON C.CODE = R.CODE_VAL
+		WHERE REPORT_ID = 86 AND T.SUBJ = 'J'),
+
+	VALUTA_UZS (GROUPS, AVERAGE) AS (
+		SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST) 
+		FROM REPORT_DATA_TABLE D
+		WHERE NAME_VALUTA = 'UZS'
+		GROUP BY GROUPS
+	),
+	
+	VALUTA_USD (GROUPS, AVERAGE) AS (
+		SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+		FROM REPORT_DATA_TABLE D
+		WHERE NAME_VALUTA = 'USD'
+		GROUP BY GROUPS
+	),
+	
+	VALUTA_EUR (GROUPS, AVERAGE) AS (
+		SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+		FROM REPORT_DATA_TABLE D
+		WHERE NAME_VALUTA = 'EUR'
+		GROUP BY GROUPS
+	),
+	
+	VALUTA_JPY (GROUPS, AVERAGE) AS (
+		SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+		FROM REPORT_DATA_TABLE D
+		WHERE NAME_VALUTA = 'JPY'
+		GROUP BY GROUPS
+	)
+
+SELECT 
+	M.TITLE,
+	M.GROUPS,
+	UZS.AVERAGE AS UZS_AVERAGE,
+	USD.AVERAGE AS USD_AVERAGE,
+	EUR.AVERAGE AS EUR_AVERAGE,
+	JPY.AVERAGE AS JPY_AVERAGE
+FROM MAIN_TABLE M
+LEFT JOIN VALUTA_UZS UZS  ON UZS.GROUPS = M.GROUPS
+LEFT JOIN VALUTA_USD USD  ON USD.GROUPS = M.GROUPS
+LEFT JOIN VALUTA_EUR EUR  ON EUR.GROUPS = M.GROUPS
+LEFT JOIN VALUTA_JPY JPY  ON JPY.GROUPS = M.GROUPS
+ORDER BY M.GROUPS</sql><sql name="Продукты (ФЛ)">SELECT VID_KREDITOVANIYA, SUM(CREDIT_PROCENT*VSEGO_ZADOLJENNOST)/SUM(VSEGO_ZADOLJENNOST) BALANS
+FROM CREDITS_REPORTDATA R
+LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+WHERE R.REPORT_ID = 86 AND T.SUBJ = 'P'
+GROUP BY VID_KREDITOVANIYA</sql><sql name="SQL 13">SELECT 
+	VID_KREDITOVANIYA, 
+	SUM(VSEGO_ZADOLJENNOST) BALANS,
+	SUM(OSTATOK_PROSR),
+	SUM(OSTATOK_NACH_PROSR_PRCNT)
+FROM CREDITS_REPORTDATA R
+LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+WHERE R.REPORT_ID = 86 AND T.SUBJ = 'P' AND 
+	VID_KREDITOVANIYA in (
+		'30-Потребительский кредит', 
+		'32-Микрозаем', 
+		'34-Автокредит', 
+		'54-Овердрафт по пластиковым карточкам физических лиц', 
+		'59-Образовательный кредит'
+	)
+GROUP BY VID_KREDITOVANIYA</sql><current_tab id="6"/></tab_sql></sqlb_project>

@@ -1,0 +1,127 @@
+{% extends "includes/base_generic.html" %} 
+{% load render_table from django_tables2 %} 
+{% load static %} {% block page_header %}
+<!-- START PAGE HEADING -->
+<div class="app-heading app-heading-bordered app-heading-page">
+    <div class="icon icon-lg"><span class="icon-laptop-phone"></span></div>
+    <div class="title">
+        <h1>Кредитный портфель</h1>
+        <p>Асака банк</p>
+    </div>
+    <div class="heading-elements"><button type="button" class="btn btn-default btn-icon-fixed dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><span class="icon-calendar-full"></span> June 13, 2017 - July 14, 2017</button>
+        <ul class="dropdown-menu dropdown-form dropdown-left">
+            <li>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group margin-bottom-10"><label>From:</label>
+                            <div class="input-group">
+                                <div class="input-group-addon"><span class="icon-calendar-full"></span></div><input type="text" class="form-control bs-datepicker" value="13/06/2017"></div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group"><label>To:</label>
+                            <div class="input-group">
+                                <div class="input-group-addon"><span class="icon-calendar-full"></span></div><input type="text" class="form-control bs-datepicker" value="13/07/2017"></div>
+                        </div>
+                    </div>
+                </div><button class="btn btn-primary btn-block">Confirm</button></li>
+        </ul>
+    </div>
+</div>
+<div class="app-heading-container app-heading-bordered bottom">
+    <ul class="breadcrumb">
+        <li><a href="{% url 'index' %}">Главная</a></li>
+        <li class="active">Кредитный портфель</li>
+    </ul>
+</div>
+
+<!-- END CONTENT TABS -->
+{% endblock %} {% block page_container %}
+<!-- START PAGE SEPARATED CONTAINER -->
+<div class="app-content-separate app-content-separated-left">
+    <div class="app-content-separate-left" data-separate-control-height="true" style="height: 600px;">
+        <div class="app-content-separate-panel padding-20 visible-mobile">
+            <div class="pull-left">
+                <h4 class="text-sm text-uppercase text-bolder margin-bottom-0">Visible On Mobile</h4>
+                <p class="subheader">Use this panel to control this sidebar</p>
+            </div><button class="btn btn-default btn-icon pull-right" data-separate-toggle-panel=".app-content-separate-left"><span class="icon-menu"></span></button></div>
+        <div class="app-content-separate-content padding-20">
+
+            <div class="input-group margin-bottom-20">
+                <div class="input-group-addon">
+                    <span class="fa fa-search"></span>
+                </div>
+                <input type="text" class="form-control" placeholder="Keyword...">
+            </div>
+            <div class="app-heading app-heading-small heading-transparent app-heading-condensed">
+                <div class="title">
+                    <p>Топ клиенты</p>
+                </div>
+            </div>
+            <div class="list-group list-group-noborder">
+                <a href="{% url 'portfolio' %}?q=npl" class="list-group-item active ">Топ 10 NPL клиенты</a>
+                <a href="{% url 'portfolio' %}?q=toxic" class="list-group-item text-bold">Топ 10 токсичные кредиты</a>
+                <a href="{% url 'portfolio' %}?q=prosr" class="list-group-item text-bold">Топ 10 просроченные кредиты</a>
+            </div>
+            <div class="app-heading app-heading-small heading-transparent app-heading-condensed">
+                <div class="title">
+                    <p>Кредитный портфель</p>
+                </div>
+            </div>
+            <div class="list-group list-group-noborder">
+                <a href="{% url 'portfolio' %}?q=overall" class="list-group-item text-bold">Общие показатели</a>
+                <a href="{% url 'portfolio' %}?q=by_term" class="list-group-item text-bold">В разбивке по срокам</a>
+                <a href="{% url 'portfolio' %}?q=by_subject" class="list-group-item text-bold">В разбивке по субъектам</a>
+                <a href="{% url 'portfolio' %}?q=by_segment" class="list-group-item text-bold">В разбивке по сегментам</a>
+                <a href="{% url 'portfolio' %}?q=by_currency" class="list-group-item text-bold">В разбивке по валютам</a>
+                <a href="{% url 'portfolio' %}?q=by_branch" class="list-group-item text-bold">В разбивке по филиалам</a>
+                <a href="{% url 'portfolio' %}?q=by_percentage&&v=national" class="list-group-item text-bold">В разбивке по процентной ставке</a>
+                <a href="{% url 'portfolio' %}?q=by_average" class="list-group-item text-bold">В разбивке по средневзвешенной процентной ставке</a>
+            </div>
+
+        </div>
+    </div>
+    <div class="app-content-separate-content">
+        <!-- CONTENT CONTAINER -->
+        <div class="container">
+            <div class="block">
+                <div class="app-heading app-heading-small">
+                    <div class="title">
+                        <h2>{{page_title}}</h2>
+                        <p>{{page_description}}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div>
+                            <ul class="nav nav-tabs">
+                                <li class="active"><a href="#tabs-1" data-toggle="tab" aria-expanded="true">В национальной валюте</a></li>
+                                <li class=""><a href="#tabs-2" data-toggle="tab" aria-expanded="false">В иностранной валюте</a></li>
+                                <li class=""><a href="#tabs-3" data-toggle="tab" aria-expanded="false">В национальной валюте по ЮЛ</a></li>
+                                <li class=""><a href="#tabs-4" data-toggle="tab" aria-expanded="false">В иностранной валюте по ЮЛ</a></li>
+                            </ul>
+                            <div class="tab-content">
+                                <div class="tab-pane active" id="tabs-1">
+                                    {% render_table table1 %}
+                                </div>
+                                <div class="tab-pane" id="tabs-2">
+                                    {% render_table table2 %}
+                                </div>
+                                <div class="tab-pane" id="tabs-3">
+                                    {% render_table table3 %}
+                                </div>
+                                <div class="tab-pane" id="tabs-4">
+                                    {% render_table table4 %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- CONTENT CONTAINER -->
+    </div>
+</div>
+<!-- END PAGE SEPARATED CONTAINER -->
+
+{% endblock %}

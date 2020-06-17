@@ -1,0 +1,43 @@
+<!-- top info -->
+<div class="card">
+    <div class="card-body">
+        <h4 class="header-title mb-1">Топ 10</h4>
+        <div class="list-group list-group-flush my-2">
+            <a href="{% url 'npl-list' %}" class="list-group-item list-group-item-action border-0 {{ npls_page }} ">
+                <i class="uil uil-arrow-growth mr-1"></i>Топ 10 NPL клиенты</a>
+            <a href="{% url 'toxic-list' %}" class="list-group-item list-group-item-action border-0 {{ toxics_page }}">
+                <i class="uil uil-arrow-growth mr-1"></i>Топ 10 токсичные кредиты</a>
+            <a href="{% url 'overdue-list' %}" class="list-group-item list-group-item-action border-0 {{ overdues_page }}">
+                <i class="uil uil-arrow-growth mr-1"></i>Топ 10 просроченные кредиты</a>
+        </div>
+    </div>
+</div>
+<!-- end top info -->
+
+<!-- credit portfolio info -->
+<div class="card">
+    <div class="card-body">
+        <h4 class="header-title mb-1">Кредитный портфель</h4>
+        <div class="list-group list-group-flush my-2">
+            <a href="{% url 'general-indicators' %}" class="list-group-item list-group-item-action border-0 {{ indicators_page }}">
+                <i class="uil  uil-clipboard-alt mr-1"></i>Общие показатели</a>
+            <a href="{% url 'break-by-terms' %}" class="list-group-item list-group-item-action border-0 {{ byterms_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по срокам</a>
+            <a href="{% url 'break-by-subjects' %}" class="list-group-item list-group-item-action border-0 {{ bysubjects_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по субъектам</a>
+            <a href="{% url 'break-by-segments' %}" class="list-group-item list-group-item-action border-0 {{ bysegments_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по сегментам</a>
+            <a href="{% url 'break-by-currency' %}" class="list-group-item list-group-item-action border-0 {{ bycurrency_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по валютам</a>
+            <a href="{% url 'break-by-branches' %}" class="list-group-item list-group-item-action border-0 {{ bybranches_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по филиалам</a>
+            <a href="{% url 'break-by-percentage' %}" class="list-group-item list-group-item-action border-0 {{ bypercentage_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по процентной ставке</a>
+            <a href="{% url 'break-by-average-weight' %}" class="list-group-item list-group-item-action border-0 {{ byaverageweight_page }}">
+                <i class="uil uil-corner-down-right-alt mr-1"></i>В разбивке по средневзвешенной процентной ставке</a>
+            <a href="{% url 'break-by-retail-product' %}" class="list-group-item list-group-item-action border-0 {{ byretailproduct_page }}">
+                    <i class="uil uil-corner-down-right-alt mr-1"></i>По продуктам розничного бизнеса</a>
+        </div>
+    </div>
+</div>
+<!-- end credit portfolio info -->

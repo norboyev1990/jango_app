@@ -1,96 +1,375 @@
 from django_tables2 import SingleTableView
-from .tables import ReportDataTable, OverallInfoTable, ByTermTable, BySubjectTable
+from .functions import CursorByName
+from .queries import Query
+from .tables import ReportDataTable, OverallInfoTable, ByTermTable, BySubjectTable, ByPercentageTable, ByPercentageULTable, ByAverageULTable, ByAverageFLTable
 from django.shortcuts import render
 from .models import ListReports, ReportData
 from django.db import connection
-from openpyxl import load_workbook
 import pandas as pd
 from pandas import DataFrame
 import numpy as np
 from datetime import datetime
+from django.http import HttpResponse
+from io import BytesIO
+from openpyxl import *
 # Create your views here.
-
-class CursorByName():
-    def __init__(self, cursor):
-        self._cursor = cursor
-    
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        row = self._cursor.__next__()
-
-        return { description[0]: row[col] for col, description in enumerate(self._cursor.description) }
-        
-npl_clients_list_yur = []
-npl_clients_list_fiz = []
-sudeb_clients_list_yur = []
-sudeb_clients_list_fiz = []
-prosr_clients_list_yur = []
-prosr_clients_list_fiz = []
-bad_loan_list_yur = []
-bad_loan_list_fiz = []
 
 def index(request):
     return render(request, 'credits/index.html')
 
-def set_value(row_number, assigned_value): 
-        return assigned_value[row_number]
-def sroki(srok):
-    if srok > 10:
-        return "свыше 10 лет"
-    elif (7 <= srok <= 10):
-        return "от 7-ми до 10 лет"
-    elif (5 <= srok <= 7):
-        return "от 5-ти до 7 лет"
-    elif (2 < srok <= 5):
-        return "от 2-х до 5 лет"
-    else:
-        return "до 2-х лет"
+def npls(request):
+    
+    if (request.POST.get('data_month')):
+        request.session['data_month'] = request.POST.get('data_month')
+    
+    if 'data_month' not in request.session:
+        request.session['data_month'] = '2020-04'
 
-def korzina(prosrochka):
-    if (prosrochka == 0):
-        return 'станд'
-    elif (prosrochka > 90):
-        return '90+'
-    elif (prosrochka > 60):
-        return '61-90'
-    elif (prosrochka > 30):
-        return '31-60'
-    else:
-        return '0-30'
+    date = pd.to_datetime(request.session['data_month'])
+    yearValue = date.year
+    monthCode = date.month
+    report = ListReports.objects.get(REPORT_MONTH=monthCode,REPORT_YEAR=yearValue)
 
-def label_race_two(row):
-    if row['unique_code'] in (npl_clients_list_yur) and row['yur_fiz'] == 'ЮЛ':
-        return 'Yes'
-    if row['passport'] in (npl_clients_list_fiz) and row['yur_fiz'] == 'ФЛ':
-        return 'Yes'
-    if row['unique_code'] in (sudeb_clients_list_yur) and row['yur_fiz'] == 'ЮЛ':
-        return 'Yes'
-    if row['passport'] in (sudeb_clients_list_fiz) and row['yur_fiz'] == 'ФЛ':
-        return 'Yes'
-    if row['unique_code'] in (prosr_clients_list_yur) and row['yur_fiz'] == 'ЮЛ':
-        return 'Yes'
-    if row['passport'] in (prosr_clients_list_fiz) and row['yur_fiz'] == 'ФЛ':
-        return 'Yes'
-    return 'No'
+    table = ReportDataTable(ReportData.objects.raw(Query.named_query_npls(), [report.id]))
+    table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
-def label_race(row):
-        if row['unique_code'] in (bad_loan_list_yur) and row['yur_fiz'] == 'ЮЛ':
-            return 'Yes'
-        if row['passport'] in (bad_loan_list_fiz) and row['yur_fiz'] == 'ФЛ':
-            return 'Yes'
-        return 'No'
-def date_check(date):
-    res = None
-    if (pd.notnull(date)):
-        res = pd.to_datetime(date)
-    return res
-def number_check(number):
-    res = None
-    if (pd.notnull(number)):
-        res = number
-    return res
+    context = {
+        "page_title": "NPL кредиты",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "npls_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def toxics(request):
+    
+    table = ReportDataTable(ReportData.objects.raw(Query.named_query_toxics()))
+    table.paginate(page=request.GET.get("page", 1), per_page=10)            
+
+    context = {
+        "page_title"  : "Токсичные кредиты",
+        "data_table"  : table,
+        "date_review" : request.session['month_review'],
+        "toxics_page" : "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def overdues(request):
+    table = ReportDataTable(ReportData.objects.raw(Query.named_query_overdues()))
+    table.paginate(page=request.GET.get("page", 1), per_page=10)            
+
+    context = {
+        'page_title': 'Просроченные кредиты',
+        'data_table': table,
+        'data_month': request.session['data_month'],
+        "overdues_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def indicators(request):
+    if (request.POST.get('data_month')):
+        request.session['data_month'] = request.POST.get('data_month')
+    
+    if 'data_month' not in request.session:
+        request.session['data_month'] = '2020-04'
+
+    date = pd.to_datetime(request.session['data_month'])
+    yearValue = date.year
+    monthCode = date.month
+
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
+    data = [2]
+    for row in CursorByName(cursor):
+        data.append(row)
+
+    listCreditPortfolio = [
+            {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
+            {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT'],     "flag": True},
+            {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT'],   "flag": True},
+            {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
+            {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
+            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING'],"flag": True},
+            {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT'], "flag": True},
+        ]
+            
+    for item in listCreditPortfolio:
+        val1 = item['old_value']
+        val2 = item['new_value']
+        flag = 'flag' in item.keys()
+        item['old_value']  = '{:.1%}'.format(val1) if flag else int(val1 / 1000000)
+        item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
+        item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
+        item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
+
+    table = OverallInfoTable(listCreditPortfolio)
+    table.paginate(page=request.GET.get("page", 1), per_page=10)            
+
+    context = {
+        "page_title": "Общие показатели",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "indicators_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def byterms(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_indicators())
+    data = [2]
+    for row in CursorByName(cursor):
+        data.append(row)
+
+    context = {
+        "page_title": "В разбивке по срокам",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "byterms_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def bysubjects(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_bysubjects())
+    
+    listBySubject = [5]
+    for row in CursorByName(cursor):
+        row['LOAN']     = int(row['LOAN'])
+        row['RATION']   = '{:.1%}'.format(row['RATION'])
+        row['NPL_LOAN'] = int(row['NPL_LOAN'])
+        row['TOX_LOAN'] = int(row['TOX_LOAN'])
+        row['TOX_NPL']  = int(row['TOX_NPL'])
+        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+        row['RESERVE']  = int(row['RESERVE'])
+        row['COATING']  = '{:.1%}'.format(row['COATING'])
+        listBySubject.append(row) 
+        
+    total = {}
+    total['TITLE']    = 'Итого'
+    total['LOAN']       = sum(c['LOAN'] for c in listBySubject[1:6])
+    total['RATION']     = '100%' 
+    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySubject[1:6]) 
+    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySubject[1:6]) 
+    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySubject[1:6]) 
+    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+    total['RESERVE']    = sum(c['RESERVE'] for c in listBySubject[1:6]) 
+    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+    listBySubject.append(total)
+
+    table = BySubjectTable(listBySubject[1:])
+    table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+    context = {
+        "page_title": "В разбивке по субъектам",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "bysubjects_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def bysegments(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_bysegments())
+    listBySegment = [5]
+    for row in CursorByName(cursor):
+        row['LOAN']     = int(row['LOAN'])
+        row['RATION']   = '{:.1%}'.format(row['RATION'])
+        row['NPL_LOAN'] = int(row['NPL_LOAN'])
+        row['TOX_LOAN'] = int(row['TOX_LOAN'])
+        row['TOX_NPL']  = int(row['TOX_NPL'])
+        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+        row['RESERVE']  = int(row['RESERVE'])
+        row['COATING']  = '{:.1%}'.format(row['COATING'])
+        listBySegment.append(row) 
+    
+    total = {}
+    total['TITLE']      = 'Итого'
+    total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:])
+    total['RATION']     = '100%' 
+    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:]) 
+    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:]) 
+    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:]) 
+    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+    total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:]) 
+    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+    listBySegment.append(total)
+
+    table = BySubjectTable(listBySegment[1:])
+    context = {
+        "page_title": "В разбивке по сегментам",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "bysegments_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def bycurrency(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_bycurrency())
+
+    listByCurrency = [5]
+    for row in CursorByName(cursor):
+        row['LOAN']     = int(row['LOAN'])
+        row['RATION']   = '{:.1%}'.format(row['RATION'])
+        row['NPL_LOAN'] = int(row['NPL_LOAN'])
+        row['TOX_LOAN'] = int(row['TOX_LOAN'])
+        row['TOX_NPL']  = int(row['TOX_NPL'])
+        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+        row['RESERVE']  = int(row['RESERVE'])
+        row['COATING']  = '{:.1%}'.format(row['COATING'])
+        listByCurrency.append(row) 
+    
+    total = {}
+    total['TITLE']      = 'Итого'
+    total['LOAN']       = sum(c['LOAN'] for c in listByCurrency[1:])
+    total['RATION']     = '100%' 
+    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listByCurrency[1:]) 
+    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listByCurrency[1:]) 
+    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listByCurrency[1:]) 
+    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+    total['RESERVE']    = sum(c['RESERVE'] for c in listByCurrency[1:]) 
+    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+    listByCurrency.append(total)
+
+    table = BySubjectTable(listByCurrency[1:])
+
+    context = {
+        "page_title": "В разбивке по валютам",
+        "data_table": table,
+        "data_month": request.session['data_month'],
+        "bycurrency_page": "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def bybranches(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_bybranches())
+    listBySegment = [24]
+    for row in CursorByName(cursor):
+        row['LOAN']     = int(row['LOAN'])
+        row['RATION']   = '{:.1%}'.format(row['RATION'])
+        row['NPL_LOAN'] = int(row['NPL_LOAN'])
+        row['TOX_LOAN'] = int(row['TOX_LOAN'])
+        row['TOX_NPL']  = int(row['TOX_NPL'])
+        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
+        row['RESERVE']  = int(row['RESERVE'])
+        row['COATING']  = '{:.1%}'.format(row['COATING'])
+        listBySegment.append(row) 
+    
+    total = {}
+    total['TITLE']      = 'Итого'
+    total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:])
+    total['RATION']     = '100%' 
+    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:]) 
+    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:]) 
+    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:]) 
+    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
+    total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:]) 
+    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
+    listBySegment.append(total)
+
+    table = BySubjectTable(listBySegment[1:])
+    # table.paginate(page=request.GET.get("page", 1), per_page=10)
+    context = {
+        "page_title" : "В разбивке по филиалам",
+        "data_table" : table,
+        "data_month" : request.session['data_month'],
+        "bybranches_page" : "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def bypercentage(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_bypercentage_national())
+
+    data = [24]
+    for row in CursorByName(cursor):
+        data.append(row) 
+    
+    listData = data[1:]
+
+    total_ull = sum(c['ULL_LOAN'] for c in listData)
+    total_uls = sum(c['ULS_LOAN'] for c in listData)
+    total_fll = sum(c['FLL_LOAN'] for c in listData)
+    total_fls = sum(c['FLS_LOAN'] for c in listData)
+
+    for item in listData:
+        item['ULL_LOAN'] = int(item['ULL_LOAN'])
+        item['ULS_LOAN'] = int(item['ULS_LOAN'])
+        item['FLL_LOAN'] = int(item['FLL_LOAN'])
+        item['FLS_LOAN'] = int(item['FLS_LOAN'])
+        item['ULL_PERCENT'] = '{:.1%}'.format(item['ULL_LOAN']/total_ull) if not (total_ull == 0) else '0,0%'
+        item['ULS_PERCENT'] = '{:.1%}'.format(item['ULS_LOAN']/total_uls) if not (total_uls == 0) else '0,0%'
+        item['FLL_PERCENT'] = '{:.1%}'.format(item['FLL_LOAN']/total_fll) if not (total_fll == 0) else '0,0%'
+        item['FLS_PERCENT'] = '{:.1%}'.format(item['FLS_LOAN']/total_fls) if not (total_fls == 0) else '0,0%'
+
+    total = {
+        'TITLE':        'Итого',
+        'ULL_LOAN':     int(total_ull),
+        'ULS_LOAN':     int(total_uls),
+        'FLL_LOAN':     int(total_fll),
+        'FLS_LOAN':     int(total_fls),
+        'ULL_PERCENT':  '100%' if not (total_ull == 0) else '0,0%',
+        'ULS_PERCENT':  '100%' if not (total_uls == 0) else '0,0%',
+        'FLL_PERCENT':  '100%' if not (total_fll == 0) else '0,0%',
+        'FLS_PERCENT':  '100%' if not (total_fls == 0) else '0,0%'
+    }
+
+    listData.append(total)
+
+    table = ByPercentageTable(listData)
+
+    context = {
+        "page_title" : "В разбивке по процентной ставке",
+        "data_table" : table,
+        "data_month" : request.session['data_month'],
+        "bypercentage_page" : "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def byaverageweight(request):
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_byaverageweight_ul())
+    
+    data = [24]
+    for row in CursorByName(cursor):
+        data.append(row) 
+    
+    listData = data[1:]
+
+    for item in listData:
+        item['UZS_AVERAGE'] = '{:.2f}'.format(item['UZS_AVERAGE'])
+        item['USD_AVERAGE'] = '{:.2f}'.format(item['USD_AVERAGE'])
+        item['EUR_AVERAGE'] = '{:.2f}'.format(item['EUR_AVERAGE'])
+        item['JPY_AVERAGE'] = '{:.2f}'.format(item['JPY_AVERAGE'])
+
+    table = ByAverageULTable(listData)
+
+    context = {
+        "page_title" : "В разбивке по средневзвешенной процентной ставке",
+        "data_table" : table,
+        "data_month" : request.session['data_month'],
+        "byaverageweight_page" : "active"
+    }
+
+    return render(request, 'credits/view.html', context)
+
+def byretailproduct(request):
+    return render(request, 'credits/index.html')
+
 def upload(request):
     c = ListReports.objects.create(REPORT_TITLE="JANUARY, 2020", REPORT_MONTH=1, REPORT_YEAR=2020, DATE_CREATED=datetime.now())
     
@@ -169,164 +448,13 @@ def upload(request):
             OKED = row['oked'],
             CODE_CONTRACT = row['code_contract'],
             REPORT=c)
-    
-def test(request):
-    #wb = load_workbook(filename = 'media/excel/january.xlsx')
-    #sheet_ranges = wb['report']
-    # data = pd.read_excel (r'media/excel/january.xlsx', dtype={"МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str' })
-    data = pd.DataFrame(list(ReportData.objects.filter(REPORT_id=86).values()))
-    data.columns = ['id', 'report_id', 'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 'maliy_biznes', 'register_number', 'oked', 'code_conract']
-    keys = ['00069','00073','00972','00120','01027','00140','00194','00206','01021','00231','00264','01004','00358','00373','00416',
-            '00417','00873','00958','00963','00969','00411','00539','00631','00904','00971','00581','01169','00625']
-
-    values = ['Андижанский', 'Асакинский', 'Фарход', 'Бухарский', 'Бухарский г','Джизакский','Кашкадарьинский',
-            'Навоийский','Зарафшанский','Наманганский','Самаркандский','Афросиёб','Сурхандарьинский','Сирдарьинский','Ташкентский г.', 'Автотранспортный',
-            'Головной офис','Сергелийский','Юнусабадский','Шайхантахурский','Ташкентский обл.','Ферганский','Кокандский','Олтиарикский', 'Маргиланский',
-            'Хорезмский','Хозараспский', 'Каракалпакский']
-    event_dictionary = dict(zip(keys, values))
-    data.drop(data.loc[data['mfo'] == 'МФО'].index, inplace=True)
-    data['Filial'] = data['mfo'].apply(set_value, args =(event_dictionary, ))
-    data['balans_schet'] = data['balans_schet'].astype('str')
-    dict_client_type = {'12401': 'ЮЛ' , '12501': 'ФЛ', '12503': 'ФЛ', '12521': 'ФЛ', '12601': 'ИП', '12621': 'ИП', '12701': 'ЮЛ' ,
-       '12901': 'ЮЛ', '13001': 'ЮЛ', '13101': 'ЮЛ', '13121': 'ЮЛ', '13201': 'ЮЛ', '14301': 'ЮЛ', '14403': 'ЮЛ',
-       '14801': 'ЮЛ', '14901': 'ФЛ', '14902': 'ФЛ', '14903': 'ФЛ', '14921': 'ФЛ', '15001': 'ИП', '15021': 'ИП',
-       '15101': 'ЮЛ', '15201': 'ЮЛ', '15301': 'ЮЛ', '15321': 'ЮЛ', '15401': 'ЮЛ', '15501': 'ЮЛ', '15521': 'ЮЛ',
-       '15607': 'ЮЛ', '15609': 'ЮЛ', '15613': 'ЮЛ'}
-    data['status_client'] = data['balans_schet'].apply(set_value, args =(dict_client_type, ))
-
-    dict_valyuta = {'000' : 'UZS', '840': 'USD', '978': 'EUR', '392': 'JPY'}
-    data['valyuta'] = data['code_val'].apply(set_value, args = (dict_valyuta, ))
-    # Преобразовать столбцы строкового типа в формат даты и времени
-    data['date_pogash'] = pd.to_datetime(data['date_pogash'])
-    data['date_dogovor'] = pd.to_datetime(data['date_dogovor'])
-    data['date_pogash_posle_prodl'] = pd.to_datetime(data['date_pogash_posle_prodl'])
-    # Добавление нового столбцы "Срок кредита" и "Сроки"
-    data['srok_kredita'] = np.where(data['date_pogash_posle_prodl'].isna(), pd.to_numeric((data['date_pogash'] - data['date_dogovor']) / np.timedelta64(1, 'Y')), pd.to_numeric((data['date_pogash_posle_prodl'] - data['date_dogovor']) / np.timedelta64(1, 'Y')))
-    data['srok_kredita'] = data['srok_kredita'].round(1)
-    data['sroki'] = data.apply(lambda x: sroki(x['srok_kredita']), axis=1)
-    # Изменить тип
-    data['vsego_zadoljennost'] = data['vsego_zadoljennost'].astype('float64')
-    data['sum_dog_ekv'] = data['sum_dog_ekv'].astype('float64')
-    data['ostatok_peresm'] = data['ostatok_peresm'].astype('float64')
-    # Добавление нового столбца Код
-    data['Code'] = data['otrasl_clienta'].str.split('-', expand=True)[0]
-    data.loc[:, 'Code'][0:2]
-    data['Code'] = data['otrasl_clienta'].str[:2]
-    data['Code'] = data['Code'].str.replace('0-', '0')
-    data['Code'] = data['Code'].astype('int64')
-    # Разделить Инн/паспорт
-    data[['inn','passport']] = data['inn_passport'].str.split(",",expand=True,)
-    #
-    keys = ['0', '99', '71', '15', '17','13','84','61','87','90','21','91','52','14','82','18','16','92','81','66','80',
-            '19','22','51','63', '83','72','12', '31','29','11','85','93','96','98','97','95','69','95']
-
-    values = [ 'Прочие','ФЛ','Торговля','Промышленность','Промышленность','Промышленность','Прочие','Строительство','Прочие','ЖКХ',
-            'Селськое хозяйство','Прочие','Транспорт','Промышленность','Прочие','Промышленность','Промышленность','Прочие','Заготовки',
-            'Строительство','Прочие','Промышленность','Селськое хозяйство','Транспорт','Строительство','Прочие','Торговля','Промышленность',
-            'Прочие','Селськое хозяйство','Промышленность','Прочие','Прочие','Прочие','Прочие','Прочие','Прочие','Строительство','Строительство']
-    segment_dictionary = dict(zip(keys, values))
-    #
-    data['Code'] = data['Code'].astype('str')
-    data['segment'] = data['Code'].apply(set_value, args =(segment_dictionary, ))
-    data['ostatok_peresm'] = data['ostatok_peresm'].fillna(0)
-    data['ostatok_peresm'] = data['ostatok_peresm'].astype('float64')
-    data['credit_schet']  = data['credit_schet'].astype('str')
-    #Добавление нового столбца "Уникальный код"
-    data['unique_code'] = data['credit_schet'].str[9:17]
-    data['yur_fiz'] = np.where(data['status_client'] == 'ИП', 'ЮЛ', data['status_client'])
-    fiz_data = data[data['yur_fiz'] == 'ФЛ']
-    yur_data = data[data['yur_fiz'] == 'ЮЛ']
-    # Добавление нового столбца "Просроченные дни"
-    data['date_obraz_pros'] = pd.to_datetime(data['date_obraz_pros'])
-    data['prosrochka_dni'] = round(pd.to_numeric((pd.to_datetime('2020-01-01') - data['date_obraz_pros']) / np.timedelta64(1, 'D')))
-    data['prosrochka_dni'] = data['prosrochka_dni'].fillna(0)
-    data['prosrochka_dni'] = data['prosrochka_dni'].astype('int64')
-    # Добавление нового столбца "Сегмент бизнеса"
-    data['segment_biznesa'] = data['status_client'].apply(lambda x: 'РБ' if x == 'ФЛ' else 'МСБ')
-    df_segment_biznesa_yur = yur_data[['unique_code', 'sum_dog_ekv', 'status_client']]
-
-    group_clients_yur = df_segment_biznesa_yur.groupby(['unique_code', 'status_client'], as_index = False).sum()
-    greater_seven_mlrd_yur = group_clients_yur[group_clients_yur['sum_dog_ekv'] > 7e10]
-    less_seven_mlrd_yur = group_clients_yur[group_clients_yur['sum_dog_ekv'] < 7e10]
-
-    greater_seven_mlrd_yur = greater_seven_mlrd_yur['unique_code'].reset_index()
-    greater_seven_mlrd_lst_yur = greater_seven_mlrd_yur['unique_code'].tolist()
-
-    df_segment_biznesa_fiz = fiz_data[['passport', 'sum_dog_ekv', 'status_client']]
-
-    group_clients_fiz = df_segment_biznesa_fiz.groupby(['passport', 'status_client'], as_index = False).sum()
-    greater_seven_mlrd_fiz = group_clients_fiz[group_clients_fiz['sum_dog_ekv'] > 7e10]
-    less_seven_mlrd_fiz = group_clients_fiz[group_clients_fiz['sum_dog_ekv'] < 7e10]
-
-    greater_seven_mlrd_fiz = greater_seven_mlrd_fiz['passport'].reset_index()
-    greater_seven_mlrd_lst_fiz = greater_seven_mlrd_fiz['passport'].tolist()
-
-    data['segment_business'] = np.where((data['unique_code'].isin(greater_seven_mlrd_lst_yur)), 'КБ', data['segment_biznesa'])
-    data = data.drop(['segment_biznesa'], axis=1)
-    # Добавление нового столбца "Корзины"
-    data['korziny'] = data.apply(lambda x: korzina(x['prosrochka_dni']), axis=1 )
-    # Добавление нового столбца "NPL + sudeb"
-    npl_clients = data[data['korziny']=='90+']
-    npl_clients_list_yur = npl_clients['unique_code'].tolist()
-    npl_clients_list_fiz = npl_clients['passport'].tolist()
-    data['ostatok_sudeb'] = data['ostatok_sudeb'].fillna(0)
-    sudeb_clients = data[data['ostatok_sudeb'] != 0]
-    sudeb_clients_list_yur = sudeb_clients['unique_code'].tolist()
-    sudeb_clients_list_fiz = sudeb_clients['passport'].tolist()
-    data['ostatok_vneb_prosr'] = data['ostatok_vneb_prosr'].fillna(0)
-    prosr_clients = data[data['ostatok_vneb_prosr'] != 0]
-    prosr_clients_list_yur = prosr_clients['unique_code'].tolist()
-    prosr_clients_list_fiz = prosr_clients['passport'].tolist()
-
-    data['npl + sudeb'] = data.apply(lambda row: label_race_two(row), axis=1)
-
-    # Добавление нового столбца "Токсичные кредиты"
-    data['bad_loans'] = data.apply(lambda x: 'Yes' if (x['ostatok_peresm'] != 0 and x['npl + sudeb'] != 'Yes' ) else 'No', axis=1)
-    bad_loans = data[data['bad_loans']== 'Yes']
-    bad_loan_all_yur = bad_loans['unique_code'].reset_index()
-    bad_loan_list_yur = bad_loan_all_yur['unique_code'].tolist()
-    bad_loan_all_fiz = bad_loans['passport'].reset_index()
-    bad_loan_list_fiz = bad_loan_all_fiz['passport'].tolist()
-
-    data['bad_loans']= data.apply(lambda row: label_race(row),axis=1)
-    #data = data.drop(['bad_loan'], axis=1)
-
-    bad = data[data['bad_loans'] == 'Yes']
-    good = data[data['bad_loans'] == 'No']
-
-    data['ostatok_prosr'] = data['ostatok_prosr'].astype('float64')
-    data['ostatok_prosr'] = data['ostatok_prosr'].fillna(0)
-    group_npl = data[data['npl + sudeb'] == 'Yes']
-    npl_clients = data[data['korziny'] == '90+']
-    # Инвест проект
-    data['priznak_invest_proekt'] =  data['obespechenie'].str[:2] 
-    invest_proekt= data[data['priznak_invest_proekt'] == '42']
-    invest_proekt_list = invest_proekt['unique_code'].tolist()
-    invest_proekt_list2 = invest_proekt['passport'].tolist()
-    data['yur_fiz_invest'] = np.where(data['status_client'] == 'ИП', 'ЮЛ', data['status_client'])
-    data['yur_fiz_invest'] = np.where((data['unique_code'].isin(invest_proekt_list)), 'Инвест. проект', data['yur_fiz_invest'])
-    top_clients = data.groupby(['name_client', 'Filial'])['sum_dog_ekv'].sum().to_frame(name = 'sum').reset_index()
-    top_clients = top_clients.sort_values(by='sum', ascending=False).reset_index()
-
-    # ТОП-10 заемщиков (NPL)
-    group_npl = npl_clients.groupby(['unique_code', 'name_client', 'Filial'])['vsego_zadoljennost'].sum().to_frame(name = 'sum').reset_index()
-    top_npl = group_npl.sort_values(by='sum', ascending=False).reset_index()
-    top_npl = top_npl.drop('index', axis=1)
-    top_npl.columns = ['Уникальный код', 'Наименование заёмщика', 'Филиал', 'Остаток кредита']
-    top_npl_clients = top_npl.head(10)
-    top_npl_clients['Остаток кредита'] = top_npl_clients['Остаток кредита'] / 1000000
-
-    group_prosr = data.groupby(['name_client', 'Filial'])['ostatok_nach_prosr_prcnt'].sum().to_frame(name = 'sum').reset_index()
-    top_prosr = group_prosr.sort_values(by='sum', ascending=False).reset_index()
-    top_prosr = top_prosr.drop('index', axis=1)
-    top_prosr.columns = ['Наименование заёмщика', 'Филиал', 'Остаток кредита']
-    top_prosr_clients = top_prosr.head(10)
-    top_prosr_clients['Остаток кредита'] = top_prosr_clients['Остаток кредита'] /1000000
-
-    context = {'mylist': top_prosr_clients.to_html(classes='table table-striped').replace('border="1"','border="0"')}
-    return render(request, 'credits/test.html', context)
 
 def portfolio(request):
+    if (request.POST.get('month_review')):
+        request.session['month_review'] = request.POST.get('month_review')
+    if 'month_review' not in request.session:
+        request.session['month_review'] = 'June, 2020' 
+
     if (request.GET.get('q') == 'toxic'):
         page_title = 'Топ 10 токсичные кредиты'
         query = '''SELECT R.id, 
@@ -452,8 +580,6 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context)
-    
-    
     elif (request.GET.get('q') == 'by_term'):
         page_title = 'В разбивке по срокам'
         cursor = connection.cursor()
@@ -645,7 +771,6 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context)
-    
     elif (request.GET.get('q') == 'by_subject'):
         page_title = 'В разбивке по субъектам'
         cursor = connection.cursor()
@@ -781,7 +906,6 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context)
-
     elif (request.GET.get('q') == 'by_segment'):
         page_title = 'В разбивке по сегментам'
         cursor = connection.cursor()
@@ -872,7 +996,7 @@ def portfolio(request):
                         SELECT *, 
                         LOAN/TOTALS AS RATION,
                         NPL_LOAN+TOX_LOAN AS TOX_NPL,
-                        (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                        (NPL_LOAN+TOX_LOAN)/LOAN AS WEIGHT,
                         RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
                         FROM (	
                             SELECT 
@@ -921,7 +1045,6 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context) 
-    
     elif (request.GET.get('q') == 'by_currency'):
         page_title = 'В разбивке по валютам'
         cursor = connection.cursor()
@@ -1010,7 +1133,7 @@ def portfolio(request):
                         SELECT *, 
                         LOAN/TOTALS AS RATION,
                         NPL_LOAN+TOX_LOAN AS TOX_NPL,
-                        (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                        (NPL_LOAN+TOX_LOAN)/LOAN AS WEIGHT,
                         RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
                         FROM (	
                             SELECT 
@@ -1058,7 +1181,6 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context) 
-
     elif (request.GET.get('q') == 'by_branch'):
         page_title = 'В разбивке по филиалам'
         cursor = connection.cursor()
@@ -1141,7 +1263,7 @@ def portfolio(request):
                             SELECT *, 
                             LOAN/TOTALS AS RATION,
                             NPL_LOAN+TOX_LOAN AS TOX_NPL,
-                            (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
+                            (NPL_LOAN+TOX_LOAN)/LOAN AS WEIGHT,
                             RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
                             FROM (	
                             SELECT 
@@ -1195,6 +1317,597 @@ def portfolio(request):
         table.paginate(page=request.GET.get("page", 1), per_page=10)
         context = {'table': table, 'page_title': page_title}
         return render(request, 'credits/portfolio.html', context) 
+    elif (request.GET.get('q') == 'by_percentage'):
+        page_title = 'В разбивке по процентной ставке'
+        page_description = 'Description'
+        cursor = connection.cursor()
+        cursor.execute('''WITH RECURSIVE
+                            MAIN_TABLE (GROUPS, TITLE) AS (
+                                SELECT 1, '20 и более'
+                                UNION
+                                SELECT GROUPS + 1,
+                                    CASE GROUPS +1
+                                        WHEN 2 THEN '16 - 20' 
+                                        WHEN 3 THEN '11 - 15' 
+                                        WHEN 4 THEN '6 - 10' 
+                                        ELSE '0 - 5' END AS TITLE	
+                                FROM MAIN_TABLE LIMIT 5),
+                                
+                            REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST, UNIQUE_CODE) AS (
+                                SELECT 
+                                    CASE WHEN CREDIT_PROCENT > 20 THEN 1
+                                        WHEN CREDIT_PROCENT > 15 THEN 2 
+                                        WHEN CREDIT_PROCENT > 10 THEN 3 
+                                        WHEN CREDIT_PROCENT > 5 THEN 4 
+                                        ELSE 5 END AS GROUPS,
+                                    T.SUBJ,
+                                    SROK,
+                                    VSEGO_ZADOLJENNOST, 
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86 AND CODE_VAL = '000'),
+
+                            UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1%'
+                                GROUP BY GROUPS
+                            )	
+                        SELECT 
+                            M.TITLE,
+                            M.GROUPS,
+                            IFNULL(ULL.TOTAL_LOAN/1000000,0) AS ULL_LOAN,
+                            IFNULL(ULS.TOTAL_LOAN/1000000,0) AS ULS_LOAN,
+                            IFNULL(FLL.TOTAL_LOAN/1000000,0) AS FLL_LOAN,
+                            IFNULL(FLS.TOTAL_LOAN/1000000,0) AS FLS_LOAN
+                        FROM MAIN_TABLE M
+                        LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+                        LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+                        LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+                        LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+                        ORDER BY M.GROUPS DESC
+                    ''')
+        
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+
+        total_ull = sum(c['ULL_LOAN'] for c in listData)
+        total_uls = sum(c['ULS_LOAN'] for c in listData)
+        total_fll = sum(c['FLL_LOAN'] for c in listData)
+        total_fls = sum(c['FLS_LOAN'] for c in listData)
+
+        for item in listData:
+            item['ULL_LOAN'] = int(item['ULL_LOAN'])
+            item['ULS_LOAN'] = int(item['ULS_LOAN'])
+            item['FLL_LOAN'] = int(item['FLL_LOAN'])
+            item['FLS_LOAN'] = int(item['FLS_LOAN'])
+            item['ULL_PERCENT'] = '{:.1%}'.format(item['ULL_LOAN']/total_ull) if not (total_ull == 0) else '0,0%'
+            item['ULS_PERCENT'] = '{:.1%}'.format(item['ULS_LOAN']/total_uls) if not (total_uls == 0) else '0,0%'
+            item['FLL_PERCENT'] = '{:.1%}'.format(item['FLL_LOAN']/total_fll) if not (total_fll == 0) else '0,0%'
+            item['FLS_PERCENT'] = '{:.1%}'.format(item['FLS_LOAN']/total_fls) if not (total_fls == 0) else '0,0%'
+
+        total = {
+            'TITLE':        'Итого',
+            'ULL_LOAN':     int(total_ull),
+            'ULS_LOAN':     int(total_uls),
+            'FLL_LOAN':     int(total_fll),
+            'FLS_LOAN':     int(total_fls),
+            'ULL_PERCENT':  '100%' if not (total_ull == 0) else '0,0%',
+            'ULS_PERCENT':  '100%' if not (total_uls == 0) else '0,0%',
+            'FLL_PERCENT':  '100%' if not (total_fll == 0) else '0,0%',
+            'FLS_PERCENT':  '100%' if not (total_fls == 0) else '0,0%'
+        }
+
+        listData.append(total)
+
+        table1 = ByPercentageTable(listData)
+        table1.paginate(page=request.GET.get("page", 1), per_page=10)
+        
+        cursor.execute('''WITH RECURSIVE
+                            MAIN_TABLE (GROUPS, TITLE) AS (
+                                SELECT 1, '20 и более'
+                                UNION
+                                SELECT GROUPS + 1,
+                                    CASE GROUPS +1
+                                        WHEN 2 THEN '16 - 20' 
+                                        WHEN 3 THEN '11 - 15' 
+                                        WHEN 4 THEN '6 - 10' 
+                                        ELSE '0 - 5' END AS TITLE	
+                                FROM MAIN_TABLE LIMIT 5),
+                                
+                            REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST, UNIQUE_CODE) AS (
+                                SELECT 
+                                    CASE WHEN CREDIT_PROCENT > 20 THEN 1
+                                        WHEN CREDIT_PROCENT > 15 THEN 2 
+                                        WHEN CREDIT_PROCENT > 10 THEN 3 
+                                        WHEN CREDIT_PROCENT > 5 THEN 4 
+                                        ELSE 5 END AS GROUPS,
+                                    T.SUBJ,
+                                    SROK,
+                                    VSEGO_ZADOLJENNOST, 
+                                    CASE WHEN T.SUBJ = 'J' 
+                                    THEN SUBSTR(CREDIT_SCHET,10,8)
+                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                    END	AS UNIQUE_CODE
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE REPORT_ID = 86 AND CODE_VAL <> '000'),
+
+                            UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3%'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1%'
+                                GROUP BY GROUPS
+                            )
+                        SELECT 
+                            M.TITLE,
+                            M.GROUPS,
+                            IFNULL(ULL.TOTAL_LOAN/1000000,0) AS ULL_LOAN,
+                            IFNULL(ULS.TOTAL_LOAN/1000000,0) AS ULS_LOAN,
+                            IFNULL(FLL.TOTAL_LOAN/1000000,0) AS FLL_LOAN,
+                            IFNULL(FLS.TOTAL_LOAN/1000000,0) AS FLS_LOAN
+                        FROM MAIN_TABLE M
+                        LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+                        LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+                        LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+                        LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+                        ORDER BY M.GROUPS DESC
+                    ''')
+        
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+
+        total_ull = sum(c['ULL_LOAN'] for c in listData)
+        total_uls = sum(c['ULS_LOAN'] for c in listData)
+        total_fll = sum(c['FLL_LOAN'] for c in listData)
+        total_fls = sum(c['FLS_LOAN'] for c in listData)
+
+        for item in listData:
+            item['ULL_LOAN'] = int(item['ULL_LOAN'])
+            item['ULS_LOAN'] = int(item['ULS_LOAN'])
+            item['FLL_LOAN'] = int(item['FLL_LOAN'])
+            item['FLS_LOAN'] = int(item['FLS_LOAN'])
+            item['ULL_PERCENT'] = '{:.1%}'.format(item['ULL_LOAN']/total_ull) if not (total_ull == 0) else '0,0%'
+            item['ULS_PERCENT'] = '{:.1%}'.format(item['ULS_LOAN']/total_uls) if not (total_uls == 0) else '0,0%'
+            item['FLL_PERCENT'] = '{:.1%}'.format(item['FLL_LOAN']/total_fll) if not (total_fll == 0) else '0,0%'
+            item['FLS_PERCENT'] = '{:.1%}'.format(item['FLS_LOAN']/total_fls) if not (total_fls == 0) else '0,0%'
+
+        total = {
+            'TITLE':        'Итого',
+            'ULL_LOAN':     int(total_ull),
+            'ULS_LOAN':     int(total_uls),
+            'FLL_LOAN':     int(total_fll),
+            'FLS_LOAN':     int(total_fls),
+            'ULL_PERCENT':  '100%' if not (total_ull == 0) else '0,0%',
+            'ULS_PERCENT':  '100%' if not (total_uls == 0) else '0,0%',
+            'FLL_PERCENT':  '100%' if not (total_fll == 0) else '0,0%',
+            'FLS_PERCENT':  '100%' if not (total_fls == 0) else '0,0%'
+        }
+
+        listData.append(total)
+
+        table2 = ByPercentageTable(listData)
+        table2.paginate(page=request.GET.get("page", 1), per_page=10)
+
+        #table3
+        cursor.execute('''WITH RECURSIVE
+                            MAIN_TABLE (GROUPS, TITLE) AS (
+                                SELECT 1, '20 и более'
+                                UNION
+                                SELECT GROUPS + 1,
+                                    CASE GROUPS +1
+                                        WHEN 2 THEN '16 - 20' 
+                                        WHEN 3 THEN '11 - 15' 
+                                        WHEN 4 THEN '6 - 10' 
+                                        ELSE '0 - 5' END AS TITLE	
+                                FROM MAIN_TABLE LIMIT 5),
+                                
+                            REPORT_DATA_TABLE (GROUPS, TERM, VSEGO_ZADOLJENNOST) AS (
+                                SELECT 
+                                    CASE WHEN CREDIT_PROCENT > 20 THEN 1
+                                        WHEN CREDIT_PROCENT > 15 THEN 2 
+                                        WHEN CREDIT_PROCENT > 10 THEN 3 
+                                        WHEN CREDIT_PROCENT > 5 THEN 4 
+                                        ELSE 5 END AS GROUPS,
+                                    CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                        THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                        ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                        END	AS TERM,
+                                    VSEGO_ZADOLJENNOST
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE T.SUBJ = 'J' AND REPORT_ID = 86 AND CODE_VAL = '000'),
+
+                            TERMLESS_2 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 2 OR TERM IS NULL
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_5 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 5 AND TERM > 2
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_7 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 7 AND TERM > 5
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_10 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 10 AND TERM > 7
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMMORE_10 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM > 10
+                                GROUP BY GROUPS
+                            )
+
+                        SELECT 
+                            M.TITLE,
+                            M.GROUPS,
+                            IFNULL(T2.TOTAL_LOAN/1000000,0) AS T2_LOAN,
+                            IFNULL(T5.TOTAL_LOAN/1000000,0) AS T5_LOAN,
+                            IFNULL(T7.TOTAL_LOAN/1000000,0) AS T7_LOAN,
+                            IFNULL(T10.TOTAL_LOAN/1000000,0) AS T10_LOAN,
+                            IFNULL(T11.TOTAL_LOAN/1000000,0) AS T11_LOAN
+                        FROM MAIN_TABLE M
+                        LEFT JOIN TERMLESS_2 T2  ON T2.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_5 T5  ON T5.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_7 T7  ON T7.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_10 T10  ON T10.GROUPS = M.GROUPS
+                        LEFT JOIN TERMMORE_10 T11  ON T11.GROUPS = M.GROUPS
+                        ORDER BY M.GROUPS DESC
+                    ''')
+        
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+
+        total_t2 = sum(c['T2_LOAN'] for c in listData)
+        total_t5 = sum(c['T5_LOAN'] for c in listData)
+        total_t7 = sum(c['T7_LOAN'] for c in listData)
+        total_t10 = sum(c['T10_LOAN'] for c in listData)
+        total_t11 = sum(c['T11_LOAN'] for c in listData)
+
+        for item in listData:
+            item['T2_LOAN'] = int(item['T2_LOAN'])
+            item['T5_LOAN'] = int(item['T5_LOAN'])
+            item['T7_LOAN'] = int(item['T7_LOAN'])
+            item['T10_LOAN'] = int(item['T10_LOAN'])
+            item['T11_LOAN'] = int(item['T11_LOAN'])
+            item['T2_PERCENT'] = '{:.1%}'.format(item['T2_LOAN']/total_t2) if not (total_t2 == 0) else '0,0%'
+            item['T5_PERCENT'] = '{:.1%}'.format(item['T5_LOAN']/total_t5) if not (total_t5 == 0) else '0,0%'
+            item['T7_PERCENT'] = '{:.1%}'.format(item['T7_LOAN']/total_t7) if not (total_t7 == 0) else '0,0%'
+            item['T10_PERCENT'] = '{:.1%}'.format(item['T10_LOAN']/total_t10) if not (total_t10 == 0) else '0,0%'
+            item['T11_PERCENT'] = '{:.1%}'.format(item['T11_LOAN']/total_t11) if not (total_t11 == 0) else '0,0%'
+
+        total = {
+            'TITLE':        'Итого',
+            'T2_LOAN':     int(total_t2),
+            'T5_LOAN':     int(total_t5),
+            'T7_LOAN':     int(total_t7),
+            'T10_LOAN':     int(total_t10),
+            'T11_LOAN':     int(total_t11),
+            'T2_PERCENT':  '100%' if not (total_t2 == 0) else '0,0%',
+            'T5_PERCENT':  '100%' if not (total_t5 == 0) else '0,0%',
+            'T7_PERCENT':  '100%' if not (total_t7 == 0) else '0,0%',
+            'T10_PERCENT':  '100%' if not (total_t10 == 0) else '0,0%',
+            'T11_PERCENT':  '100%' if not (total_t11 == 0) else '0,0%',
+           
+        }
+
+        listData.append(total)
+
+        table3 = ByPercentageULTable(listData)
+        table3.paginate(page=request.GET.get("page", 1), per_page=10)
+
+        #table4
+        cursor.execute('''WITH RECURSIVE
+                            MAIN_TABLE (GROUPS, TITLE) AS (
+                                SELECT 1, '20 и более'
+                                UNION
+                                SELECT GROUPS + 1,
+                                    CASE GROUPS +1
+                                        WHEN 2 THEN '16 - 20' 
+                                        WHEN 3 THEN '11 - 15' 
+                                        WHEN 4 THEN '6 - 10' 
+                                        ELSE '0 - 5' END AS TITLE	
+                                FROM MAIN_TABLE LIMIT 5),
+                                
+                            REPORT_DATA_TABLE (GROUPS, TERM, VSEGO_ZADOLJENNOST) AS (
+                                SELECT 
+                                    CASE WHEN CREDIT_PROCENT > 20 THEN 1
+                                        WHEN CREDIT_PROCENT > 15 THEN 2 
+                                        WHEN CREDIT_PROCENT > 10 THEN 3 
+                                        WHEN CREDIT_PROCENT > 5 THEN 4 
+                                        ELSE 5 END AS GROUPS,
+                                    CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                                        THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                        ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                                        END	AS TERM,
+                                    VSEGO_ZADOLJENNOST
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                WHERE T.SUBJ = 'J' AND REPORT_ID = 86 AND CODE_VAL <> '000'),
+
+                            TERMLESS_2 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 2 OR TERM IS NULL
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_5 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 5 AND TERM > 2
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_7 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 7 AND TERM > 5
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMLESS_10 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM <= 10 AND TERM > 7
+                                GROUP BY GROUPS
+                            ),
+                            
+                            TERMMORE_10 (GROUPS, TOTAL_LOAN) AS (
+                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE TERM > 10
+                                GROUP BY GROUPS
+                            )
+                        SELECT 
+                            M.TITLE,
+                            M.GROUPS,
+                            IFNULL(T2.TOTAL_LOAN/1000000,0) AS T2_LOAN,
+                            IFNULL(T5.TOTAL_LOAN/1000000,0) AS T5_LOAN,
+                            IFNULL(T7.TOTAL_LOAN/1000000,0) AS T7_LOAN,
+                            IFNULL(T10.TOTAL_LOAN/1000000,0) AS T10_LOAN,
+                            IFNULL(T11.TOTAL_LOAN/1000000,0) AS T11_LOAN
+                        FROM MAIN_TABLE M
+                        LEFT JOIN TERMLESS_2 T2  ON T2.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_5 T5  ON T5.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_7 T7  ON T7.GROUPS = M.GROUPS
+                        LEFT JOIN TERMLESS_10 T10  ON T10.GROUPS = M.GROUPS
+                        LEFT JOIN TERMMORE_10 T11  ON T11.GROUPS = M.GROUPS
+                        ORDER BY M.GROUPS DESC
+                    ''')
+        
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+
+        total_t2 = sum(c['T2_LOAN'] for c in listData)
+        total_t5 = sum(c['T5_LOAN'] for c in listData)
+        total_t7 = sum(c['T7_LOAN'] for c in listData)
+        total_t10 = sum(c['T10_LOAN'] for c in listData)
+        total_t11 = sum(c['T11_LOAN'] for c in listData)
+
+        for item in listData:
+            item['T2_LOAN'] = int(item['T2_LOAN'])
+            item['T5_LOAN'] = int(item['T5_LOAN'])
+            item['T7_LOAN'] = int(item['T7_LOAN'])
+            item['T10_LOAN'] = int(item['T10_LOAN'])
+            item['T11_LOAN'] = int(item['T11_LOAN'])
+            item['T2_PERCENT'] = '{:.1%}'.format(item['T2_LOAN']/total_t2) if not (total_t2 == 0) else '0,0%'
+            item['T5_PERCENT'] = '{:.1%}'.format(item['T5_LOAN']/total_t5) if not (total_t5 == 0) else '0,0%'
+            item['T7_PERCENT'] = '{:.1%}'.format(item['T7_LOAN']/total_t7) if not (total_t7 == 0) else '0,0%'
+            item['T10_PERCENT'] = '{:.1%}'.format(item['T10_LOAN']/total_t10) if not (total_t10 == 0) else '0,0%'
+            item['T11_PERCENT'] = '{:.1%}'.format(item['T11_LOAN']/total_t11) if not (total_t11 == 0) else '0,0%'
+
+        total = {
+            'TITLE':        'Итого',
+            'T2_LOAN':     int(total_t2),
+            'T5_LOAN':     int(total_t5),
+            'T7_LOAN':     int(total_t7),
+            'T10_LOAN':     int(total_t10),
+            'T11_LOAN':     int(total_t11),
+            'T2_PERCENT':  '100%' if not (total_t2 == 0) else '0,0%',
+            'T5_PERCENT':  '100%' if not (total_t5 == 0) else '0,0%',
+            'T7_PERCENT':  '100%' if not (total_t7 == 0) else '0,0%',
+            'T10_PERCENT':  '100%' if not (total_t10 == 0) else '0,0%',
+            'T11_PERCENT':  '100%' if not (total_t11 == 0) else '0,0%',
+        }
+
+        listData.append(total)
+
+        table4 = ByPercentageULTable(listData)
+        table4.paginate(page=request.GET.get("page", 1), per_page=10)
+
+
+        context = {
+            'table1': table1, 
+            'table2': table2, 
+            'table3': table3, 
+            'table4': table4, 
+            'page_title': page_title, 
+            'page_description': page_description
+        }
+        return render(request, 'credits/percentage.html', context) 
+    elif (request.GET.get('q') == 'by_average'):
+        page_title = 'В разбивке по средневзвешенной процентной ставке'
+        cursor = connection.cursor()
+        cursor.execute('''WITH
+                            MAIN_TABLE (GROUPS, TITLE) AS (
+                                SELECT 1, 'Долгосрочные'
+                                UNION
+                                SELECT 2, 'Краткосрочные'
+                            ),
+                                
+                            REPORT_DATA_TABLE (GROUPS, NAME_VALUTA, SUM_CREDIT, VSEGO_ZADOLJENNOST) AS (
+                                SELECT 
+                                    CASE WHEN SUBSTR(SROK,1,1) = '3' 
+                                        THEN 1 ELSE 2 END AS GROUPS,
+                                    C.NAME,
+                                    CREDIT_PROCENT * VSEGO_ZADOLJENNOST,
+                                    VSEGO_ZADOLJENNOST
+                                FROM CREDITS_REPORTDATA R
+                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                                LEFT JOIN CREDITS_CURRENCY C ON C.CODE = R.CODE_VAL
+                                WHERE REPORT_ID = 86 AND T.SUBJ = 'J'),
+
+                            VALUTA_UZS (GROUPS, AVERAGE) AS (
+                                SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST) 
+                                FROM REPORT_DATA_TABLE D
+                                WHERE NAME_VALUTA = 'UZS'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            VALUTA_USD (GROUPS, AVERAGE) AS (
+                                SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+                                FROM REPORT_DATA_TABLE D
+                                WHERE NAME_VALUTA = 'USD'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            VALUTA_EUR (GROUPS, AVERAGE) AS (
+                                SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+                                FROM REPORT_DATA_TABLE D
+                                WHERE NAME_VALUTA = 'EUR'
+                                GROUP BY GROUPS
+                            ),
+                            
+                            VALUTA_JPY (GROUPS, AVERAGE) AS (
+                                SELECT GROUPS, SUM(SUM_CREDIT)/SUM(VSEGO_ZADOLJENNOST)
+                                FROM REPORT_DATA_TABLE D
+                                WHERE NAME_VALUTA = 'JPY'
+                                GROUP BY GROUPS
+                            )
+
+                        SELECT 
+                            M.TITLE,
+                            M.GROUPS,
+                            IFNULL(UZS.AVERAGE,0) AS UZS_AVERAGE,
+                            IFNULL(USD.AVERAGE,0) AS USD_AVERAGE,
+                            IFNULL(EUR.AVERAGE,0) AS EUR_AVERAGE,
+                            IFNULL(JPY.AVERAGE,0) AS JPY_AVERAGE
+                        FROM MAIN_TABLE M
+                        LEFT JOIN VALUTA_UZS UZS  ON UZS.GROUPS = M.GROUPS
+                        LEFT JOIN VALUTA_USD USD  ON USD.GROUPS = M.GROUPS
+                        LEFT JOIN VALUTA_EUR EUR  ON EUR.GROUPS = M.GROUPS
+                        LEFT JOIN VALUTA_JPY JPY  ON JPY.GROUPS = M.GROUPS
+                        ORDER BY M.GROUPS
+                    ''')
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+
+        for item in listData:
+            item['UZS_AVERAGE'] = '{:.2f}'.format(item['UZS_AVERAGE'])
+            item['USD_AVERAGE'] = '{:.2f}'.format(item['USD_AVERAGE'])
+            item['EUR_AVERAGE'] = '{:.2f}'.format(item['EUR_AVERAGE'])
+            item['JPY_AVERAGE'] = '{:.2f}'.format(item['JPY_AVERAGE'])
+
+        table = ByAverageULTable(listData)
+        table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+        #table 2
+        cursor.execute('''SELECT VID_KREDITOVANIYA AS TITLE, 
+                        ROUND(SUM(CREDIT_PROCENT*VSEGO_ZADOLJENNOST)/SUM(VSEGO_ZADOLJENNOST),1) AS BALANS,
+                        SUM(CREDIT_PROCENT*VSEGO_ZADOLJENNOST) CREDIT,
+                        SUM(VSEGO_ZADOLJENNOST) LOAN
+                        FROM CREDITS_REPORTDATA R
+                        LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                        WHERE R.REPORT_ID = 86 AND T.SUBJ = 'P'
+                        GROUP BY VID_KREDITOVANIYA
+                    ''')
+        data = [24]
+        for row in CursorByName(cursor):
+            data.append(row) 
+        
+        listData = data[1:]
+        total_credit = sum(c['CREDIT'] for c in listData)
+        total_loan   = sum(c['LOAN'] for c in listData)
+        listData.append({
+            'TITLE':'Итого',
+            'BALANS': '{:.1f}'.format(total_credit/total_loan)
+        })
+
+        table2 = ByAverageFLTable(listData)
+        table2.paginate(page=request.GET.get("page", 1), per_page=10)
+
+        context = {
+            'table': table, 
+            'table2': table2, 
+            'page_title': page_title}
+        return render(request, 'credits/average.html', context) 
     else:
         page_title = 'Топ 10 NPL клиенты'
         query = '''SELECT R.id, 
@@ -1220,10 +1933,58 @@ def portfolio(request):
         
     table = ReportDataTable(ReportData.objects.raw(query))
     table.paginate(page=request.GET.get("page", 1), per_page=10)
-    context = {'table': table, 'page_title': page_title}
+    context = {
+        'table': table, 
+        'page_title': page_title,
+        'month_review': request.session['month_review']}
     return render(request, 'credits/portfolio.html', context)
 
-class ReportDataListView(SingleTableView):
-    model = ReportData
-    table_class = ReportDataTable
-    template_name = 'credits/report.html'
+def test_export(request):
+    if (request.POST.get('data_month')):
+        request.session['data_month'] = request.POST.get('data_month')
+    
+    if 'data_month' not in request.session:
+        request.session['data_month'] = '2020-04'
+
+    date = pd.to_datetime(request.session['data_month'])
+    yearValue = date.year
+    monthCode = date.month
+
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
+    data = [2]
+    for row in CursorByName(cursor):
+        data.append(row)
+
+    listCreditPortfolio = [
+            {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
+            {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT'],     "flag": True},
+            {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT'],   "flag": True},
+            {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
+            {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
+            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING'],"flag": True},
+            {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT'], "flag": True},
+        ]
+            
+    for item in listCreditPortfolio:
+        val1 = item['old_value']
+        val2 = item['new_value']
+        flag = 'flag' in item.keys()
+        item['old_value']  = '{:.1%}'.format(val1) if flag else int(val1 / 1000000)
+        item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
+        item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
+        item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
+
+    df = pd.DataFrame(listCreditPortfolio)
+    with BytesIO() as b:
+        # Use the StringIO object as the filehandle.
+        writer = pd.ExcelWriter(b, engine='xlsxwriter')
+        df.to_excel(writer, sheet_name='Sheet1')
+        writer.save()
+        writer.close()
+        response = HttpResponse(b.getvalue(), content_type='application/vnd.ms-excel')
+        response["Content-Disposition"] = 'attachment; filename="Indicators.xlsx"'
+        return response
