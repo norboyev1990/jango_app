@@ -1,7 +1,7 @@
 from django_tables2 import SingleTableView
 from .functions import CursorByName
 from .queries import Query
-from .tables import ReportDataTable, OverallInfoTable, ByTermTable, BySubjectTable, ByPercentageTable, ByPercentageULTable, ByAverageULTable, ByAverageFLTable
+from .tables import *
 from django.shortcuts import render
 from .models import ListReports, ReportData
 from django.db import connection
@@ -368,6 +368,25 @@ def byaverageweight(request):
     return render(request, 'credits/view.html', context)
 
 def byretailproduct(request):
+    return render(request, 'credits/index.html')
+
+def contracts(request):
+    table = ContractListTable(ReportData.objects.raw(Query.named_query_contracts()))
+    table.paginate(page=request.GET.get("page", 1), per_page=10)
+    context = {
+        "page_title" : "Договора",
+        "data_table" : table,
+        "data_month" : request.session['data_month'],
+        "contracts_page" : "active",
+
+    }
+
+    return render(request, 'credits/contract-list.html', context)
+
+def contract_detail(request):
+    return render(request, 'credits/index.html')
+
+def search(request):
     return render(request, 'credits/index.html')
 
 def upload(request):

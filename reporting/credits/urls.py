@@ -5,6 +5,7 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('overview/', views.npls, name='overview'),
     path('npls/', views.npls, name='npl-list'),
     path('toxics/', views.toxics, name='toxic-list'),
     path('overdues/', views.overdues, name='overdue-list'),
@@ -17,6 +18,9 @@ urlpatterns = [
     path('bypercentage/', views.bypercentage, name='break-by-percentage'),
     path('byaverageweight/', views.byaverageweight, name='break-by-average-weight'),
     path('byretailproduct/', views.byretailproduct, name='break-by-retail-product'),
+    path('search/', views.search, name='search-client'),
+    path('contracts/', views.contracts, name='contract-list'),
+    path('contracts/<int:id>/', views.contract_detail, name='contract-detail'),
     path('portfolio/', views.portfolio, name='portfolio'),
     path('upload/', views.upload, name='upload'),
     path('export/', views.test_export, name='export'),

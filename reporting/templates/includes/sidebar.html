@@ -34,15 +34,40 @@
                                     </a>
                                 </li>
 
+                                <li class="side-nav-item">
+                                    <a href="{% url 'contract-list' %}" class="side-nav-link">
+                                        <i class="uil-copy-alt"></i>
+                                        <span> Договора </span>
+                                    </a>
+                                </li>
+
+                                <li class="side-nav-item">
+                                    <a href="#" class="side-nav-link">
+                                        <i class="uil-search"></i>
+                                        <span> Поиск клиента </span>
+                                    </a>
+                                </li>
+
 
                                 <li class="side-nav-title side-nav-item">Отчёты</li>
 
                                 <li class="side-nav-item">
-                                    <a href="{% url 'npl-list' %}" class="side-nav-link">
-                                        <i class="uil-package"></i>
+                                    <a href="javascript: void(0);" class="side-nav-link" aria-expanded="true">
+                                        <i class="uil-briefcase"></i>
                                         <span> Кредитный портфель </span>
+                                        <span class="menu-arrow"></span>
                                     </a>
+                                    <ul class="side-nav-second-level mm-collapse" aria-expanded="false" style="">
+                                        <li>
+                                            <a href="{% url 'overview' %}">Обзор</a>
+                                        </li>
+                                        <li>
+                                            <a href="{% url 'npl-list' %}">Детали</a>
+                                        </li>
+                                    </ul>
                                 </li>
+
+                                
 
                                 <li class="side-nav-item">
                                     <a href="#" class="side-nav-link">
@@ -53,17 +78,6 @@
 
                             </ul>
 
-                            <!-- Help Box -->
-                            <div class="help-box text-white text-center">
-                                <a href="javascript: void(0);" class="float-right close-btn text-white">
-                                    <i class="mdi mdi-close"></i>
-                                </a>
-                                <img src="{% static 'hyper/assets/images/help-icon.svg'%}" height="90" alt="Helper Icon Image">
-                                <h5 class="mt-3">Unlimited Access</h5>
-                                <p class="mb-3">Upgrade to plan to get access to unlimited reports</p>
-                                <a href="javascript: void(0);" class="btn btn-outline-light btn-sm">Upgrade</a>
-                            </div>
-                            <!-- end Help Box -->
                             <!-- End Sidebar -->
 
                             <div class="clearfix"></div>

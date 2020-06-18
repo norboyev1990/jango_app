@@ -955,3 +955,24 @@ class Query():
         return '''
                 '''
 
+    def named_query_contracts():
+        return '''SELECT 
+                CODE_CONTRACT AS id,
+                NAME_CLIENT,
+                DATE_DOGOVOR,
+                DATE_POGASH,
+                SUM_DOG_NOM,
+                C.NAME AS VALUTE,
+                B.NAME AS BRANCH,
+                T.NAME AS TYPE_CLIENT
+            --S.NAME AS SEGMENT 
+            FROM credits_reportdata R
+            LEFT JOIN credits_currency C ON C.CODE = R.CODE_VAL
+            LEFT JOIN credits_branch B ON B.CODE = R.MFO
+            LEFT JOIN credits_clienttype T ON T.CODE = R.BALANS_SCHET
+            --LEFT JOIN credits_segment S ON S.CODE = CAST(SUBSTR(R.OTRASL_KREDITOVANIYA,1,2) AS INTEGER)
+            GROUP BY CODE_CONTRACT
+            HAVING TYPE_CLIENT LIKE 'ЮЛ'
+            ORDER BY CODE_CONTRACT
+        
+        '''

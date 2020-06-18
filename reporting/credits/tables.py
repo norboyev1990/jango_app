@@ -112,3 +112,20 @@ class ByAverageFLTable(tables.Table):
         template_name = "django_tables2/bootstrap.html"
         attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
         orderable = False
+
+class ContractListTable(tables.Table):
+    class Meta:
+        model = ReportData
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
+        orderable = False
+        fields = (
+            'id',
+            'NAME_CLIENT', 
+            'DATE_DOGOVOR',
+            'DATE_POGASH',
+            'SUM_DOG_NOM',
+            'VALUTE',
+            'BRANCH',
+            'TYPE_CLIENT',
+            )
