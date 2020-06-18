@@ -9,18 +9,58 @@ import pandas as pd
 from pandas import DataFrame
 import numpy as np
 from datetime import datetime
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from io import BytesIO
 from openpyxl import *
 # Create your views here.
 
 def index(request):
-    return render(request, 'credits/index.html')
+    if (request.POST.get('data_month')):
+        request.session['data_month'] = request.POST.get('data_month')
+        return HttpResponseRedirect(request.path_info)
+    
+    if 'data_month' not in request.session:
+        request.session['data_month'] = '2020-04'
+
+    date = pd.to_datetime(request.session['data_month'])
+    yearValue = date.year
+    monthCode = date.month
+
+    cursor = connection.cursor()
+    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
+    data = [2]
+    for row in CursorByName(cursor):
+        data.append(row)
+
+    statistics = {
+        'portfolio_value'   : int(data[2]['CREDIT']/1000000),
+        'portfolio_percent' : '{:.1%}'.format((data[2]['CREDIT'] - data[1]['CREDIT']) / data[2]['CREDIT']),
+        'portfolio_growth'  : data[2]['CREDIT'] - data[1]['CREDIT'], 
+        'npl_value'         : int(data[2]['NPL']/1000000),
+        'npl_percent'       : '{:.1%}'.format((data[2]['NPL'] - data[1]['NPL']) / data[2]['NPL']),
+        'npl_growth'        : data[2]['NPL'] - data[1]['NPL'], 
+        'toxic_value'       : int(data[2]['TOXIC']/1000000),
+        'toxic_percent'     : '{:.1%}'.format((data[2]['TOXIC'] - data[1]['TOXIC']) / data[2]['TOXIC']),
+        'toxic_growth'      : data[2]['TOXIC'] - data[1]['TOXIC'],
+        'overdue_value'     : int(data[2]['OVERDUE']/1000000),
+        'overdue_percent'   : '{:.1%}'.format((data[2]['OVERDUE'] - data[1]['OVERDUE']) / data[2]['OVERDUE']),
+        'overdue_growth'    : data[2]['OVERDUE'] - data[1]['OVERDUE'],
+    }
+
+    context = {
+        "page_title": "NPL кредиты",
+        "statistics": statistics,
+        "data_month": request.session['data_month'],
+        "npls_page": "active"
+    }
+
+    return render(request, 'credits/index.html', context)
 
 def npls(request):
     
     if (request.POST.get('data_month')):
         request.session['data_month'] = request.POST.get('data_month')
+        return HttpResponseRedirect(request.path_info)
     
     if 'data_month' not in request.session:
         request.session['data_month'] = '2020-04'
@@ -29,7 +69,6 @@ def npls(request):
     yearValue = date.year
     monthCode = date.month
     report = ListReports.objects.get(REPORT_MONTH=monthCode,REPORT_YEAR=yearValue)
-
     table = ReportDataTable(ReportData.objects.raw(Query.named_query_npls(), [report.id]))
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
@@ -72,6 +111,7 @@ def overdues(request):
 def indicators(request):
     if (request.POST.get('data_month')):
         request.session['data_month'] = request.POST.get('data_month')
+        return HttpResponseRedirect(request.path_info)
     
     if 'data_month' not in request.session:
         request.session['data_month'] = '2020-04'
@@ -85,7 +125,9 @@ def indicators(request):
     data = [2]
     for row in CursorByName(cursor):
         data.append(row)
-
+    
+    column_date1 = date.strftime("%d.%m.%Y")
+    column_date2 = date.strftime("%d.%m.%Y")
     listCreditPortfolio = [
             {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
             {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
@@ -107,8 +149,10 @@ def indicators(request):
         item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
         item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
         item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
-
+    
     table = OverallInfoTable(listCreditPortfolio)
+    # table.set_column_title(_column_name='old_value', _column_new_name=column_date1)
+    # table.set_column_title(_column_name='new_value', _column_new_name=column_date2)
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
     context = {

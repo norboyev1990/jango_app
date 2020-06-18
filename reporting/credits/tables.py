@@ -19,12 +19,15 @@ class OverallInfoTable(tables.Table):
     new_value   = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
     difference  = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
     percentage  = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
-
-
+    
     class Meta:
         template_name = "django_tables2/bootstrap.html"
         attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
         orderable = False
+    
+    def set_column_title(self, _column_name="", _column_new_name="" ):
+        self.base_columns[_column_name].verbose_name = _column_new_name 
+
 class ByTermTable(tables.Table):
     name    = tables.Column()
     portfel = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
@@ -118,7 +121,7 @@ class ContractListTable(tables.Table):
         model = ReportData
         template_name = "django_tables2/bootstrap.html"
         attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
-        orderable = False
+        orderable = True
         fields = (
             'id',
             'NAME_CLIENT', 
