@@ -1,63 +1,69 @@
 class Query():
     def named_query_npls():
-        return '''SELECT R.id, 
-                        CASE T.SUBJ
-                            WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
-                            ELSE SUBSTR(INN_PASSPORT,11,9)
-                        END	AS UNIQUE_CODE,
-                        NAME_CLIENT AS BORROWER,
-                        B.NAME AS BRANCH_NAME,
-                        ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
-                        JULIANDAY('2020-02-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
-                        SUM(OSTATOK_SUDEB) AS SUDEB,
-                        SUM(OSTATOK_VNEB_PROSR) AS PROSR
-                    FROM CREDITS_REPORTDATA R
-                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                    WHERE REPORT_id = %s
-                    GROUP BY UNIQUE_CODE
-                    HAVING DAY_COUNT > 90 OR SUDEB IS NOT NULL OR PROSR IS NOT NULL 
-                    ORDER BY LOAN_BALANCE DESC
-                    LIMIT 10
-                '''
+        return '''
+            SELECT R.ID,
+                ROW_NUMBER () OVER (ORDER BY SUM(VSEGO_ZADOLJENNOST) DESC) AS Number,
+                NAME_CLIENT AS Name,
+                B.NAME AS Branch,
+                SUM(VSEGO_ZADOLJENNOST)/1000000 AS Balans,
+                DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month') AS SDATE
+            FROM CREDITS_REPORTDATA R
+            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+            WHERE REPORT_ID = %s
+            GROUP BY 
+                CASE T.SUBJ
+                    WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
+                    ELSE SUBSTR(INN_PASSPORT,11,9)
+                END
+            HAVING 
+                JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) > 90 
+                OR SUM(OSTATOK_SUDEB) IS NOT NULL 
+                OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL 
+            ORDER BY BALANS DESC
+        '''
 
     def named_query_toxics():
-        return '''SELECT R.id, 
-                        SUBSTR(CREDIT_SCHET,10,8) AS UNIQUE_CODE, 
-                        COUNT(*),
-                        NAME_CLIENT AS BORROWER,
-                        B.NAME AS BRANCH_NAME,
-                        ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 2) AS LOAN_BALANCE,
-                        JULIANDAY('2020-02-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) AS DAY_COUNT,
-                        SUM(OSTATOK_SUDEB) AS SUDEB,
-                        SUM(OSTATOK_VNEB_PROSR) AS PROSR,
-                        SUM(OSTATOK_PERESM) AS PERESM
-                    FROM CREDITS_REPORTDATA R
-                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                    WHERE R.REPORT_ID = 82
-                    GROUP BY UNIQUE_CODE, NAME_CLIENT
-                    HAVING PERESM IS NOT NULL and (DAY_COUNT < 90 or DAY_COUNT IS NULL)  and PROSR IS NULL and SUDEB IS NULL
-                    ORDER BY LOAN_BALANCE DESC
-                    LIMIT 10
-                '''
+        return '''
+            SELECT R.ID, 
+                ROW_NUMBER () OVER (ORDER BY SUM(VSEGO_ZADOLJENNOST) DESC) AS Number,
+                NAME_CLIENT AS Name,
+                B.NAME AS Branch,
+                SUM(VSEGO_ZADOLJENNOST)/1000000 AS Balans,
+                DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month') AS SDate
+            FROM CREDITS_REPORTDATA R
+            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+            LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+            WHERE R.REPORT_ID = %s
+            GROUP BY SUBSTR(CREDIT_SCHET,10,8)
+            HAVING SUM(OSTATOK_PERESM) IS NOT NULL  
+                AND SUM(OSTATOK_VNEB_PROSR) IS NULL 
+                AND SUM(OSTATOK_SUDEB) IS NULL 
+                AND (JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 
+                OR JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL
+                )
+            ORDER BY BALANS DESC
+        '''
 
     def named_query_overdues():
-        return '''SELECT R.id, 
-                        CASE T.SUBJ
-                            WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
-                            ELSE SUBSTR(INN_PASSPORT,11,9)
-                        END	AS UNIQUE_CODE,
-                        NAME_CLIENT AS BORROWER,
-                        B.NAME AS BRANCH_NAME,
-                        ROUND(SUM(OSTATOK_NACH_PROSR_PRCNT)/1000000, 2) AS LOAN_BALANCE
-                    FROM CREDITS_REPORTDATA R
-                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                    LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                    WHERE REPORT_id = 82
-                    GROUP BY UNIQUE_CODE
-                    ORDER BY LOAN_BALANCE DESC
-                    LIMIT 10
+        return '''
+            SELECT R.ID, 
+                ROW_NUMBER () OVER (ORDER BY SUM(OSTATOK_NACH_PROSR_PRCNT) DESC) AS Number,
+                NAME_CLIENT AS Name,
+                B.NAME AS Branch,
+                SUM(OSTATOK_NACH_PROSR_PRCNT)/1000000 AS Balans
+            FROM CREDITS_REPORTDATA R
+            LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+            WHERE REPORT_ID = %s
+            GROUP BY 
+                CASE T.SUBJ
+                    WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
+                    ELSE SUBSTR(INN_PASSPORT,11,9)
+                END
+            ORDER BY BALANS DESC
                 '''
 
     def named_query_indicators():

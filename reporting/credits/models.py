@@ -8,6 +8,7 @@ class ListReports(models.Model):
     DATE_CREATED = models.DateTimeField(null=True)
     def __str__(self):
         return self.REPORT_TITLE
+
 class ReportData(models.Model):
     REPORT = models.ForeignKey(ListReports, related_name="REPORT", on_delete=models.CASCADE, null=True)
     NUMBER                  = models.IntegerField(null=True)
@@ -92,6 +93,7 @@ class Currency(models.Model):
     NAME = models.CharField(max_length=3)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
+
 class Segment(models.Model):
     CHOICES = (
        ('Прочие', 'Прочие'),
@@ -108,3 +110,27 @@ class Segment(models.Model):
     NAME = models.CharField(choices=CHOICES, max_length=255)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
+
+class NplClients(models.Model):
+    Number = models.IntegerField(verbose_name="№")
+    Name   = models.CharField(max_length=255, verbose_name="Наименование заёмщика")
+    Branch = models.CharField(max_length=255, verbose_name="Филиал")
+    Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток кредита")
+    class Meta:
+        managed  = False
+
+class ToxicCredits(models.Model):
+    Number = models.IntegerField(verbose_name="№")
+    Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
+    Branch = models.CharField(max_length=255, verbose_name="Филиал")
+    Balans = models.FloatField(verbose_name="Остаток р/с 16377")
+    class Meta:
+        managed  = False
+
+class OverdueCredits(models.Model):
+    Number = models.IntegerField(verbose_name="№")
+    Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
+    Branch = models.CharField(max_length=255, verbose_name="Филиал")
+    Balans = models.FloatField(verbose_name="Остаток р/с 16377")
+    class Meta:
+        managed  = False

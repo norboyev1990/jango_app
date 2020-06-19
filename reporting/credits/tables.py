@@ -1,5 +1,37 @@
 import django_tables2 as tables
-from .models import ReportData
+from .models import *
+import itertools
+
+attr_right_text = {"th":{"class":"text-right"}, "td":{"class":"text-right"}}
+
+class NplClientsTable(tables.Table):
+    Balans = tables.Column(verbose_name="Остаток кредита", attrs=attr_right_text)
+    class Meta:
+        model = NplClients
+        orderable = False
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        exclude = ('id',)
+
+class ToxicCreditsTable(tables.Table):
+    Balans = tables.Column(verbose_name="Остаток р/с 16377", attrs=attr_right_text)
+    class Meta:
+        model = ToxicCredits
+        orderable = False
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        exclude = ('id',)
+
+class OverdueCreditsTable(tables.Table):
+    Balans = tables.Column(verbose_name="Остаток р/с 16377", attrs=attr_right_text)
+    class Meta:
+        model = OverdueCredits
+        orderable = False
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        exclude = ('id',)
+        
+        
 
 class ReportDataTable(tables.Table):
     class Meta:
