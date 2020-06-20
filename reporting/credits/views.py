@@ -3,7 +3,7 @@ from .functions import CursorByName
 from .queries import Query
 from .tables import *
 from django.shortcuts import render
-from .models import ListReports, ReportData
+from .models import *
 from django.db import connection
 import pandas as pd
 from pandas import DataFrame
@@ -14,13 +14,16 @@ from io import BytesIO
 from openpyxl import *
 # Create your views here.
 
-def index(request):
+def setReviewMonthInSession(request):
     if (request.POST.get('data_month')):
         request.session['data_month'] = request.POST.get('data_month')
         return HttpResponseRedirect(request.path_info)
     
     if 'data_month' not in request.session:
         request.session['data_month'] = '2020-04'
+
+def index(request):
+    setReviewMonthInSession(request)
 
     date = pd.to_datetime(request.session['data_month'])
     yearValue = date.year
@@ -56,66 +59,61 @@ def index(request):
 
     return render(request, 'credits/index.html', context)
 
-def npls(request):
+def npls(request): 
     
-    if (request.POST.get('data_month')):
-        request.session['data_month'] = request.POST.get('data_month')
-        return HttpResponseRedirect(request.path_info)
+    setReviewMonthInSession(request)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     
-    if 'data_month' not in request.session:
-        request.session['data_month'] = '2020-04'
-
-    date = pd.to_datetime(request.session['data_month'])
-    yearValue = date.year
-    monthCode = date.month
-    report = ListReports.objects.get(REPORT_MONTH=monthCode,REPORT_YEAR=yearValue)
-    table = ReportDataTable(ReportData.objects.raw(Query.named_query_npls(), [report.id]))
+    table = NplClientsTable(NplClients.objects.raw(Query.named_query_npls(), [report.id]))
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
     context = {
         "page_title": "NPL кредиты",
         "data_table": table,
-        "data_month": request.session['data_month'],
+        "data_month": sMonth.strftime('%Y-%m'),
         "npls_page": "active"
     }
 
     return render(request, 'credits/view.html', context)
 
 def toxics(request):
-    
-    table = ReportDataTable(ReportData.objects.raw(Query.named_query_toxics()))
+
+    setReviewMonthInSession(request)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+
+    table = ToxicCreditsTable(ToxicCredits.objects.raw(Query.named_query_toxics(), [report.id]))
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
     context = {
-        "page_title"  : "Токсичные кредиты",
-        "data_table"  : table,
-        "date_review" : request.session['month_review'],
+        "page_title": "Токсичные кредиты",
+        "data_table": table,
+        "data_month": sMonth.strftime('%Y-%m'),
         "toxics_page" : "active"
     }
 
     return render(request, 'credits/view.html', context)
 
 def overdues(request):
-    table = ReportDataTable(ReportData.objects.raw(Query.named_query_overdues()))
+    setReviewMonthInSession(request)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+    
+    table = OverdueCreditsTable(OverdueCredits.objects.raw(Query.named_query_overdues(), [report.id]))
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
     context = {
-        'page_title': 'Просроченные кредиты',
-        'data_table': table,
-        'data_month': request.session['data_month'],
+        "page_title": "Просроченные кредиты",
+        "data_table": table,
+        "data_month": sMonth.strftime('%Y-%m'),
         "overdues_page": "active"
     }
 
     return render(request, 'credits/view.html', context)
 
 def indicators(request):
-    if (request.POST.get('data_month')):
-        request.session['data_month'] = request.POST.get('data_month')
-        return HttpResponseRedirect(request.path_info)
-    
-    if 'data_month' not in request.session:
-        request.session['data_month'] = '2020-04'
-
+    setReviewMonthInSession(request)
     date = pd.to_datetime(request.session['data_month'])
     yearValue = date.year
     monthCode = date.month
@@ -165,6 +163,7 @@ def indicators(request):
     return render(request, 'credits/view.html', context)
 
 def byterms(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_indicators())
     data = [2]
@@ -181,6 +180,7 @@ def byterms(request):
     return render(request, 'credits/view.html', context)
 
 def bysubjects(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_bysubjects())
     
@@ -221,6 +221,7 @@ def bysubjects(request):
     return render(request, 'credits/view.html', context)
 
 def bysegments(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_bysegments())
     listBySegment = [5]
@@ -258,6 +259,7 @@ def bysegments(request):
     return render(request, 'credits/view.html', context)
 
 def bycurrency(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_bycurrency())
 
@@ -297,6 +299,7 @@ def bycurrency(request):
     return render(request, 'credits/view.html', context)
 
 def bybranches(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_bybranches())
     listBySegment = [24]
@@ -335,6 +338,7 @@ def bybranches(request):
     return render(request, 'credits/view.html', context)
 
 def bypercentage(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_bypercentage_national())
 
@@ -385,6 +389,7 @@ def bypercentage(request):
     return render(request, 'credits/view.html', context)
 
 def byaverageweight(request):
+    setReviewMonthInSession(request)
     cursor = connection.cursor()
     cursor.execute(Query.named_query_byaverageweight_ul())
     
@@ -412,9 +417,11 @@ def byaverageweight(request):
     return render(request, 'credits/view.html', context)
 
 def byretailproduct(request):
+    setReviewMonthInSession(request)
     return render(request, 'credits/index.html')
 
 def contracts(request):
+    setReviewMonthInSession(request)
     table = ContractListTable(ReportData.objects.raw(Query.named_query_contracts()))
     table.paginate(page=request.GET.get("page", 1), per_page=10)
     context = {
@@ -428,9 +435,11 @@ def contracts(request):
     return render(request, 'credits/contract-list.html', context)
 
 def contract_detail(request):
+    setReviewMonthInSession(request)
     return render(request, 'credits/index.html')
 
 def search(request):
+    setReviewMonthInSession(request)
     return render(request, 'credits/index.html')
 
 def upload(request):
