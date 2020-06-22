@@ -6,6 +6,51 @@
 {% endblock %} 
 
 {% block page_container %}
+<style>
+   .panel-default {
+    border-color: #ECECEC;
+}
+.panel {
+    border-radius: 0px;
+}
+.panel {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.easypiechart-panel {
+    text-align: center;
+    padding: 1px 0;
+    margin-bottom: 20px;
+    }
+h4 {
+    padding-top: 10px;
+}
+.easypiechart {
+    position: relative;
+    text-align: center;
+    width: 120px;
+    height: 120px;
+    margin: 20px auto 10px auto;
+}
+#easypiechart-red .percent {
+    color: #ef4040;
+}
+.easypiechart .percent {
+    display: block;
+    position: absolute;
+    font-size: 26px;
+    top: 38px;
+    width: 120px;
+}
+audio, canvas, progress, video {
+    display: inline-block;
+    vertical-align: baseline;}
+    
+</style>
 <div class="container-fluid">
 
     
@@ -14,7 +59,7 @@
     
     <!-- end page title -->
 
-    <div class="row" style="padding-top: 15px;">
+    <div   class="row" style="padding-top: 15px;">
         <div class="col-lg-9">
             <div class="grid-container">
                 <div class="card">
@@ -183,32 +228,12 @@
         </div>
         <div class="col-lg-3">
             <div class="card">
-                <div class="card-body" style="">
-                    <div class="dropdown float-right">
-                        <a href="#" class="dropdown-toggle arrow-none card-drop p-0" data-toggle="dropdown" aria-expanded="false">
-                            <i class="mdi mdi-dots-vertical"></i>
-                        </a>
-                        <div class="dropdown-menu dropdown-menu-right">
-                            <a href="javascript:void(0);" class="dropdown-item">Refresh Report</a>
-                            <a href="javascript:void(0);" class="dropdown-item">Export Report</a>
-                        </div>
-                    </div>
-                    <h4 class="header-title">Скоринг клиента</h4>
-
-                    <div id="sessions-os" class="apex-charts mt-3" data-colors="#727cf5,#0acf97,#fa5c7c,#ffbc00" style="min-height: 270.7px;"><div id="apexchartst8m4wrws" class="apexcharts-canvas apexchartst8m4wrws apexcharts-theme-light" style="width: 460px; height: 270.7px;"><svg id="SvgjsSvg1934" width="460" height="270.70000000000005" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:svgjs="http://svgjs.com/svgjs" class="apexcharts-svg" xmlns:data="ApexChartsNS" transform="translate(0, 0)" style="background: transparent;"><g id="SvgjsG1936" class="apexcharts-inner apexcharts-graphical" transform="translate(96, 0)"><defs id="SvgjsDefs1935"><clipPath id="gridRectMaskt8m4wrws"><rect id="SvgjsRect1938" width="274" height="270" x="-3" y="-1" rx="0" ry="0" opacity="1" stroke-width="0" stroke="none" stroke-dasharray="0" fill="#fff"></rect></clipPath><clipPath id="gridRectMarkerMaskt8m4wrws"><rect id="SvgjsRect1939" width="272" height="272" x="-2" y="-2" rx="0" ry="0" opacity="1" stroke-width="0" stroke="none" stroke-dasharray="0" fill="#fff"></rect></clipPath></defs><g id="SvgjsG1941" class="apexcharts-radialbar"><g id="SvgjsG1942"><g id="SvgjsG1943" class="apexcharts-tracks"><g id="SvgjsG1950" class="apexcharts-radialbar-track apexcharts-track" rel="4"><path id="apexcharts-radialbarTrack-3" d="M 134 62.897560975609736 A 71.10243902439026 71.10243902439026 0 1 1 133.98759028339126 62.8975620585618" fill="none" fill-opacity="1" stroke="rgba(242,242,242,0.85)" stroke-opacity="1" stroke-linecap="butt" stroke-width="7.2489756097561004" stroke-dasharray="0" class="apexcharts-radialbar-area" data:pathOrig="M 134 62.897560975609736 A 71.10243902439026 71.10243902439026 0 1 1 133.98759028339126 62.8975620585618"></path></g></g><g id="SvgjsG1952"><g id="SvgjsG1963" class="apexcharts-series apexcharts-radial-series" seriesName="Android" rel="4" data:realIndex="3"><path id="SvgjsPath1964" d="M 134 62.897560975609736 A 71.10243902439026 71.10243902439026 0 1 1 71.81240560359103 99.52885353799704" fill="none" fill-opacity="0.85" stroke="rgba(255,188,0,0.85)" stroke-opacity="1" stroke-linecap="butt" stroke-width="7.47317073170732" stroke-dasharray="0" class="apexcharts-radialbar-area apexcharts-radialbar-slice-3" data:angle="299" data:value="83" index="0" j="3" data:pathOrig="M 134 62.897560975609736 A 71.10243902439026 71.10243902439026 0 1 1 71.81240560359103 99.52885353799704"></path></g><circle id="SvgjsCircle1953" r="62.47795121951221" cx="134" cy="134" class="apexcharts-radialbar-hollow" fill="transparent"></circle><g id="SvgjsG1954" class="apexcharts-datalabels-group" transform="translate(0, 0) scale(1)" style="opacity: 1;"><text id="SvgjsText1955" font-family="Helvetica, Arial, sans-serif" x="134" y="134" text-anchor="middle" dominant-baseline="auto" font-size="16px" font-weight="600" fill="#373d3f" class="apexcharts-text apexcharts-datalabel-label" style="font-family: Helvetica, Arial, sans-serif;">OS</text><text id="SvgjsText1956" font-family="Helvetica, Arial, sans-serif" x="134" y="166" text-anchor="middle" dominant-baseline="auto" font-size="16px" font-weight="400" fill="#373d3f" class="apexcharts-text apexcharts-datalabel-value" style="font-family: Helvetica, Arial, sans-serif;">8541</text></g></g></g></g><line id="SvgjsLine1965" x1="0" y1="0" x2="268" y2="0" stroke="#b6b6b6" stroke-dasharray="0" stroke-width="1" class="apexcharts-ycrosshairs"></line><line id="SvgjsLine1966" x1="0" y1="0" x2="268" y2="0" stroke-dasharray="0" stroke-width="0" class="apexcharts-ycrosshairs-hidden"></line></g><g id="SvgjsG1937" class="apexcharts-annotations"></g></svg><div class="apexcharts-legend"></div></div></div>
-
-                    <div class="row text-center mt-2">
-                        <div class="col-6">
-                            <h4 class="font-weight-normal">
-                                <span>6,510</span>
-                            </h4>
-                            <p class="text-muted mb-0">Online System</p>
-                        </div>
-                        <div class="col-6">
-                            <h4 class="font-weight-normal">
-                                <span>2,031</span>
-                            </h4>
-                            <p class="text-muted mb-0">Offline System</p>
+                <div class="card-body">
+                    <div class="panel panel-default">
+                        <div class="panel-body easypiechart-panel">
+                            <h4>No. of Visits</h4>
+                            <div class="easypiechart" id="easypiechart-red" data-percent="46"><span class="percent">46%</span>
+                            <canvas height="110" width="110"></canvas></div>
                         </div>
                     </div>
 
