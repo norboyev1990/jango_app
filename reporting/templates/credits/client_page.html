@@ -1,0 +1,258 @@
+{% extends "includes/base.html" %} 
+{% load static %}
+
+{% block page_header %}
+
+{% endblock %} 
+
+{% block page_container %}
+<style>
+   .panel-default {
+    border-color: #ECECEC;
+}
+.panel {
+    border-radius: 0px;
+}
+.panel {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.easypiechart-panel {
+    text-align: center;
+    padding: 1px 0;
+    margin-bottom: 20px;
+    }
+h4 {
+    padding-top: 10px;
+}
+.easypiechart {
+    position: relative;
+    text-align: center;
+    width: 120px;
+    height: 120px;
+    margin: 20px auto 10px auto;
+}
+#easypiechart-red .percent {
+    color: #ef4040;
+}
+.easypiechart .percent {
+    display: block;
+    position: absolute;
+    font-size: 26px;
+    top: 38px;
+    width: 120px;
+}
+audio, canvas, progress, video {
+    display: inline-block;
+    vertical-align: baseline;}
+    
+</style>
+<div class="container-fluid">
+
+    
+
+    <!-- start page title -->
+    
+    <!-- end page title -->
+
+    <div   class="row" style="padding-top: 15px;">
+        <div class="col-lg-9">
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-body">
+                        <ul class="nav nav-tabs nav-bordered mb-3">
+                            <li class="nav-item">
+                                <a href="#multiple-targets-preview" data-toggle="tab" aria-expanded="false" class="nav-link active">
+                                    Основные данные
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                
+                            </li>
+                        </ul> <!-- end nav-->
+
+                        <div class="tab-content">
+                            <div class="tab-pane show active" id="multiple-targets-preview">
+                                <div style="margin-left: 10px;">
+                                    <h4 class="header-title mt-0 mb-3">Норбоев Абдулла Бойназарович</h4>
+                                    
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <img src="\static\credits\img\user.png" alt="image" style=" height: 62%;" class="img-fluid  rounded">
+                                    </div>
+                                    <div class="col-md-10">
+                                        <div class="text-left">
+                                            <p class="text-muted"><strong>ФИО:</strong> <span class="ml-2">Michael A. Franklin</span></p>
+        
+                                            <p class="text-muted"><strong>Тип клиента :</strong><span class="ml-2">(+12) 123 1234 567</span></p>
+        
+                                            <p class="text-muted"><strong>ИНН:</strong> <span class="ml-2">coderthemes@gmail.com</span></p>
+        
+                                            <p class="text-muted"><strong>Паспорт :</strong> <span class="ml-2">USA</span></p>
+        
+                                            <p class="text-muted"><strong>Адрес клиента :</strong>
+                                                <span class="ml-2"> English, German, Spanish </span>
+                                            </p>
+                                            
+                                            </div>
+                                    </div>
+                                </div>
+                                
+                            </div> <!-- end preview-->
+
+                            <div class="tab-pane" id="multiple-targets-code">
+                                code
+                            </div> <!-- end preview code-->
+                        </div> <!-- end tab-content-->
+
+                    </div> <!-- end card-body-->
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="grid-container">
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="header-title mb-3">Заметки по клиенту</h4>
+
+                        <div class="inbox-widget">
+                            <div class="inbox-item">
+                                <div class="inbox-item-img"><img src="reporting/static/credits/img/user.png" class="rounded-circle" alt=""></div>
+                                <p class="inbox-item-author">Tomaslau</p>
+                                <p class="inbox-item-text">I've finished it! See you so...</p>
+                                <p class="inbox-item-date">
+                                    <a href="#" class="btn btn-sm btn-link text-info font-13"> Reply </a>
+                                </p>
+                            </div>
+                            <div class="inbox-item">
+                                <div class="inbox-item-img"><img src="reporting/static/credits/img/user.png" class="rounded-circle" alt=""></div>
+                                <p class="inbox-item-author">Stillnotdavid</p>
+                                <p class="inbox-item-text">This theme is awesome!</p>
+                                <p class="inbox-item-date">
+                                    <a href="#" class="btn btn-sm btn-link text-info font-13"> Reply </a>
+                                </p>
+                            </div>
+                            <div class="inbox-item">
+                                <div class="inbox-item-img"><img src="reporting/static/credits/img/user.png" class="rounded-circle" alt=""></div>
+                                <p class="inbox-item-author">Kurafire</p>
+                                <p class="inbox-item-text">Nice to meet you</p>
+                                <p class="inbox-item-date">
+                                    <a href="#" class="btn btn-sm btn-link text-info font-13"> Reply </a>
+                                </p>
+                            </div>
+
+                            <div class="inbox-item">
+                                <div class="inbox-item-img"><img src="reporting/static/credits/img/user.png" class="rounded-circle" alt=""></div>
+                                <p class="inbox-item-author">Shahedk</p>
+                                <p class="inbox-item-text">Hey! there I'm available...</p>
+                                <p class="inbox-item-date">
+                                    <a href="#" class="btn btn-sm btn-link text-info font-13"> Reply </a>
+                                </p>
+                            </div>
+                        </div> <!-- end inbox-widget -->
+                    </div> <!-- end card-body-->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="header-title mb-3">Кредиты</h4>
+
+                    <div class="table-responsive">
+                        <table class="table table-borderless table-nowrap mb-0">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Clients</th>
+                                    <th>Project Name</th>
+                                    <th>Start Date</th>
+                                    <th>Due Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td> Halette Boivin</td>
+                                    <td>App design and development</td>
+                                    <td>01/01/2015</td>
+                                    <td>10/15/2018</td>
+                                    <td><span class="badge badge-info-lighten">Work in Progress</span></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td> Durandana Jolicoeur</td>
+                                    <td>Coffee detail page - Main Page</td>
+                                    <td>21/07/2016</td>
+                                    <td>12/05/2018</td>
+                                    <td><span class="badge badge-danger-lighten">Pending</span></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td> Lucas Sabourin</td>
+                                    <td>Poster illustation design</td>
+                                    <td>18/03/2018</td>
+                                    <td>28/09/2018</td>
+                                    <td><span class="badge badge-success-lighten">Done</span></td>
+                                </tr>
+                                <tr>
+                                    <td>4</td>
+                                    <td> Donatien Brunelle</td>
+                                    <td>Drinking bottle graphics</td>
+                                    <td>02/10/2017</td>
+                                    <td>07/05/2018</td>
+                                    <td><span class="badge badge-info-lighten">Work in Progress</span></td>
+                                </tr>
+                                <tr>
+                                    <td>5</td>
+                                    <td>Karel Auberjo</td>
+                                    <td>Landing page design - Home</td>
+                                    <td>17/01/2017</td>
+                                    <td>25/05/2021</td>
+                                    <td><span class="badge badge-warning-lighten">Coming soon</span></td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+                </div> <!-- end col-->
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="panel panel-default">
+                        <div class="panel-body easypiechart-panel">
+                            <h4>No. of Visits</h4>
+                            <div class="easypiechart" id="easypiechart-red" data-percent="46"><span class="percent">46%</span>
+                            <canvas height="110" width="110"></canvas></div>
+                        </div>
+                    </div>
+
+                <div class="resize-triggers"><div class="expand-trigger"><div style="width: 509px; height: 431px;"></div></div><div class="contract-trigger"></div></div></div> <!-- end card-body-->
+            </div>
+        </div>
+    </div>
+   
+
+    <!-- end row -->
+</div>
+{% endblock %}
+
+{% block myscripts %}
+<script type="text/javascript" src="{% static 'hyper/assets/js/pages/demo.dashboard-analytics.js' %}"></script>
+<script>
+    $(document).ready(function(){
+        
+    })
+</script>
+
+{% endblock %}

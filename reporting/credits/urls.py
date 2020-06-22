@@ -24,4 +24,9 @@ urlpatterns = [
     path('portfolio/', views.portfolio, name='portfolio'),
     path('upload/', views.upload, name='upload'),
     path('export/', views.test_export, name='export'),
+    path('client_page/', views.client_page, name='client_page'),
+    
+
+    
+
 ]

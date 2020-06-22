@@ -2055,3 +2055,7 @@ def test_export(request):
         response = HttpResponse(b.getvalue(), content_type='application/vnd.ms-excel')
         response["Content-Disposition"] = 'attachment; filename="Indicators.xlsx"'
         return response
+
+def client_page(request):
+    setReviewMonthInSession(request)
+    return render(request, 'credits/client_page.html')
