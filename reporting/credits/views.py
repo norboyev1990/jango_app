@@ -114,18 +114,14 @@ def overdues(request):
 
 def indicators(request):
     setReviewMonthInSession(request)
-    date = pd.to_datetime(request.session['data_month'])
-    yearValue = date.year
-    monthCode = date.month
+    sMonth = pd.to_datetime(request.session['data_month'])
 
     cursor = connection.cursor()
-    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
+    cursor.execute(Query.named_query_indicators(), {'month2':sMonth.month, 'month1':sMonth.month-1})
     data = [2]
     for row in CursorByName(cursor):
         data.append(row)
-    
-    column_date1 = date.strftime("%d.%m.%Y")
-    column_date2 = date.strftime("%d.%m.%Y")
+
     listCreditPortfolio = [
             {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
             {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
@@ -149,8 +145,6 @@ def indicators(request):
         item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
     
     table = OverallInfoTable(listCreditPortfolio)
-    # table.set_column_title(_column_name='old_value', _column_new_name=column_date1)
-    # table.set_column_title(_column_name='new_value', _column_new_name=column_date2)
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
 
     context = {
@@ -164,15 +158,16 @@ def indicators(request):
 
 def byterms(request):
     setReviewMonthInSession(request)
-    cursor = connection.cursor()
-    cursor.execute(Query.named_query_indicators())
-    data = [2]
-    for row in CursorByName(cursor):
-        data.append(row)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+
+    data = ByTerms.objects.raw(Query.named_query_byterms(), [report.id])
+    # total   = sum(c['PorBalans'] for c in data)
+    table1 = ByTermsTable(data)
 
     context = {
         "page_title": "В разбивке по срокам",
-        "data_table": table,
+        "data_table": table1,
         "data_month": request.session['data_month'],
         "byterms_page": "active"
     }

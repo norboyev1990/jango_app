@@ -2,7 +2,7 @@ import django_tables2 as tables
 from .models import *
 import itertools
 
-attr_right_text = {"th":{"class":"text-right"}, "td":{"class":"text-right"}}
+attr_right_text = {"th":{"class":"text-right"}, "td":{"class":"text-right"}, "tf":{"class":"text-right"}}
 
 class NplClientsTable(tables.Table):
     Balans = tables.Column(verbose_name="Остаток кредита", attrs=attr_right_text)
@@ -46,19 +46,46 @@ class ReportDataTable(tables.Table):
             'LOAN_BALANCE',
             )
 class OverallInfoTable(tables.Table):
-    name        = tables.Column()
-    old_value   = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
-    new_value   = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
-    difference  = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
-    percentage  = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
+    name        = tables.Column(verbose_name="Название")
+    old_value   = tables.Column(attrs=attr_right_text, verbose_name="Предидушый дата")
+    new_value   = tables.Column(attrs=attr_right_text, verbose_name="Текушая дата")
+    difference  = tables.Column(attrs=attr_right_text, verbose_name="Изменение")
+    percentage  = tables.Column(attrs=attr_right_text, verbose_name="Изменение, %")
     
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
+        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark"}}
         orderable = False
-    
-    def set_column_title(self, _column_name="", _column_new_name="" ):
-        self.base_columns[_column_name].verbose_name = _column_new_name 
+
+class ByTermsTable(tables.Table):
+    Title = tables.Column(footer="Total:")
+    PorBalans = tables.Column(
+        attrs=attr_right_text,
+        verbose_name="Кредитный портфель",
+        footer=lambda table: sum(x.PorBalans for x in table.data)
+    )
+    Dolya = tables.Column(verbose_name="Доля")
+    NplBalans = tables.Column(
+        attrs=attr_right_text,
+        verbose_name="NPL",
+        footer=lambda table: sum(x.NplBalans for x in table.data)
+    )
+    ToxBalans = tables.Column(
+        attrs=attr_right_text,
+        verbose_name="Токсичные кредиты",
+        footer=lambda table: sum(x.ToxBalans for x in table.data)
+    )
+    ResBalans = tables.Column(
+        attrs=attr_right_text,
+        verbose_name="Резервы",
+        footer=lambda table: sum(x.ResBalans for x in table.data)
+    )
+    class Meta:
+        model = ByTerms
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark"}}
+        orderable = False
+        exclude = ('id',)
 
 class ByTermTable(tables.Table):
     name    = tables.Column()

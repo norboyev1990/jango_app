@@ -123,7 +123,7 @@ class ToxicCredits(models.Model):
     Number = models.IntegerField(verbose_name="№")
     Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
     Branch = models.CharField(max_length=255, verbose_name="Филиал")
-    Balans = models.FloatField(verbose_name="Остаток р/с 16377")
+    Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток р/с 16377")
     class Meta:
         managed  = False
 
@@ -131,6 +131,16 @@ class OverdueCredits(models.Model):
     Number = models.IntegerField(verbose_name="№")
     Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
     Branch = models.CharField(max_length=255, verbose_name="Филиал")
-    Balans = models.FloatField(verbose_name="Остаток р/с 16377")
+    Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток р/с 16377")
+    class Meta:
+        managed  = False
+
+class ByTerms(models.Model):
+    Title     = models.CharField(max_length=255, verbose_name="Сроки")
+    PorBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Кредитный портфель")
+    Dolya = models.DecimalField(max_digits=12, decimal_places=2)
+    NplBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="NPL")
+    ToxBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Токсичные кредиты")
+    ResBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Резервы")
     class Meta:
         managed  = False

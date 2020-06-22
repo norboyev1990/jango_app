@@ -123,29 +123,104 @@ class Query():
                 '''
 
     def named_query_byterms():
-        return '''WITH MYVIEW (ID, TERM, VSEGO_ZADOLJENNOST) AS (
-                            SELECT ID,
+        return '''
+            WITH RECURSIVE
+                MAIN_TABLE (GROUPS, TITLE) AS (
+                    SELECT 1, 'свыше 10 лет'
+                    UNION
+                    SELECT GROUPS + 1,
+                        CASE GROUPS +1
+                            WHEN 2 THEN 'от 7-ми до 10 лет' 
+                            WHEN 3 THEN 'от 5-ти до 7 лет' 
+                            WHEN 4 THEN 'от 2-х до 5 лет' 
+                            ELSE 'до 2-х лет' END AS TITLE	
+                    FROM MAIN_TABLE LIMIT 5),
+                    
+                REPORT_DATA_TABLE (
+                    GROUPS, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, 
+                    OSTATOK_VNEB_PROSR, OSTATOK_PERESM, OSTATOK_REZERV, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE WHEN TERM > 10 THEN 1
+                            WHEN TERM > 7 AND TERM <= 10 THEN 2
+                            WHEN TERM > 5 AND TERM <= 7 THEN 3
+                            WHEN TERM > 2 AND TERM <= 5 THEN 4
+                            ELSE 5 END AS GROUPS, 
+                        CASE SUBJ WHEN 'J' 
+                                THEN SUBSTR(CREDIT_SCHET,10,8)
+                                ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                END	AS UNIQUE_CODE,
+                        JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS),
+                        OSTATOK_SUDEB, 
+                        OSTATOK_VNEB_PROSR,
+                        OSTATOK_PERESM,
+                        OSTATOK_REZERV,
+                        VSEGO_ZADOLJENNOST
+                    FROM (
+                        SELECT *,
                             CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
                                 THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
                                 ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
-                                END	AS TERM,
-                                VSEGO_ZADOLJENNOST
-                            FROM credits_reportdata
-                            WHERE REPORT_id = 86
-                        )
-                            
-                        SELECT 
-                            CASE WHEN TERM <= 2 THEN '1_GROUP_2'
-                                WHEN TERM > 2 AND TERM <= 5 THEN '2_GROUP_2_5'
-                                WHEN TERM > 5 AND TERM <= 7 THEN '3_GROUP_5_7'
-                                WHEN TERM > 7 AND TERM <= 10 THEN '4_GROUP_7_10'
-                                ELSE '5_GROUP_10' END AS GROUPS,
-                            COUNT(ID) AS COUNT,
-                            ROUND(SUM(VSEGO_ZADOLJENNOST)/1000000, 0) AS SUMMA	
-                        FROM MYVIEW
-                        GROUP BY GROUPS
-                        ORDER BY GROUPS DESC
-                '''
+                                END	AS TERM
+                        FROM CREDITS_REPORTDATA R
+                        LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                        WHERE REPORT_ID = %s
+                    ) T
+                ),
+                    
+                PORTFOLIO_TABLE (GROUPS, BALANS) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM REPORT_DATA_TABLE
+                    GROUP BY GROUPS
+                ),
+
+                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                NPL_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM NPL_UNIQUE_TABLE N
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE OSTATOK_PERESM IS NOT NULL AND (DAYS < 90 OR DAYS IS NULL) 
+                        AND OSTATOK_SUDEB IS NULL AND OSTATOK_VNEB_PROSR IS NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                TOX_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM TOX_UNIQUE_TABLE T
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = T.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                RES_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(OSTATOK_REZERV)
+                    FROM REPORT_DATA_TABLE D
+                    GROUP BY GROUPS
+                )
+            SELECT 
+                M.GROUPS AS id,
+                M.Title AS Title,
+                IFNULL(P.BALANS/1000000,0) AS PorBalans,
+                IFNULL(N.BALANS/1000000,0) AS NplBalans,
+                IFNULL(T.BALANS/1000000,0) AS ToxBalans,
+                IFNULL(R.BALANS/1000000,0) AS ResBalans
+            FROM MAIN_TABLE M
+            LEFT JOIN PORTFOLIO_TABLE P  ON P.GROUPS = M.GROUPS
+            LEFT JOIN NPL_TABLE N  ON N.GROUPS = M.GROUPS
+            LEFT JOIN TOX_TABLE T  ON T.GROUPS = M.GROUPS
+            LEFT JOIN RES_TABLE R  ON R.GROUPS = M.GROUPS
+            ORDER BY M.GROUPS
+        '''
 
     def named_query_bysubjects():
         return '''WITH 
