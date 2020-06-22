@@ -55,7 +55,7 @@ class OverallInfoTable(tables.Table):
     
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark"}}
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
         orderable = False
 
 class ByTermsTable(tables.Table):
@@ -108,7 +108,7 @@ class ByTermsTable(tables.Table):
     class Meta:
         model = ByTerms
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
         sequence = ('Title', 'PorBalans', 'PorPercent', 'NplBalans', 'ToxBalans', 'NplToxic', 'TKNWeight', 'ResBalans')
         orderable = False
         exclude = ('id',)
@@ -127,7 +127,7 @@ class BySubjectTable(tables.Table):
 
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
+        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
         orderable = False
 
 class ByPercentageTable(tables.Table):
