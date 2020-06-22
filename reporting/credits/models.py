@@ -137,10 +137,21 @@ class OverdueCredits(models.Model):
 
 class ByTerms(models.Model):
     Title     = models.CharField(max_length=255, verbose_name="Сроки")
-    PorBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Кредитный портфель")
-    Dolya = models.DecimalField(max_digits=12, decimal_places=2)
-    NplBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="NPL")
-    ToxBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Токсичные кредиты")
-    ResBalans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Резервы")
+    PorBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Кредитный портфель")
+    PorPercent= models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля")
+    NplBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="NPL")
+    ToxBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Токсичные кредиты")
+    ResBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Резервы")
+
+    def amount_npl_toxic(self):
+        return self.NplBalans + self.ToxBalans
+
+    def weight_npl_toxic(self):
+        return '{:.1%}'.format((self.NplBalans+self.ToxBalans)/self.PorBalans)
+
+    def reserve_cover(self):
+        return '{:.1%}'.format(self.ResBalans/(self.NplBalans+self.ToxBalans))
+
+
     class Meta:
         managed  = False

@@ -2,7 +2,7 @@ import django_tables2 as tables
 from .models import *
 import itertools
 
-attr_right_text = {"th":{"class":"text-right"}, "td":{"class":"text-right"}, "tf":{"class":"text-right"}}
+attr_right_text = {"th":{"class":"text-center"}, "td":{"class":"text-center"}, "tf":{"class":"text-center"}}
 
 class NplClientsTable(tables.Table):
     Balans = tables.Column(verbose_name="Остаток кредита", attrs=attr_right_text)
@@ -59,13 +59,20 @@ class OverallInfoTable(tables.Table):
         orderable = False
 
 class ByTermsTable(tables.Table):
-    Title = tables.Column(footer="Total:")
+    Title = tables.Column(
+        attrs={"td":{"class":"text-truncate"}},
+        verbose_name="Сроки",
+        footer="Итого:")
     PorBalans = tables.Column(
         attrs=attr_right_text,
         verbose_name="Кредитный портфель",
         footer=lambda table: sum(x.PorBalans for x in table.data)
     )
-    Dolya = tables.Column(verbose_name="Доля")
+    PorPercent = tables.Column(
+        attrs=attr_right_text,
+        verbose_name="Доля, %",
+        footer="100%"
+    )
     NplBalans = tables.Column(
         attrs=attr_right_text,
         verbose_name="NPL",
@@ -76,51 +83,51 @@ class ByTermsTable(tables.Table):
         verbose_name="Токсичные кредиты",
         footer=lambda table: sum(x.ToxBalans for x in table.data)
     )
+    NplToxic = tables.Column(
+        accessor='amount_npl_toxic',
+        attrs=attr_right_text,
+        verbose_name="ТК + NPL",
+        footer=lambda table: sum(x.NplBalans+x.ToxBalans for x in table.data)
+    )
+    TKNWeight = tables.Column(
+        accessor='weight_npl_toxic',
+        attrs=attr_right_text,
+        verbose_name="Удельный вес",
+        footer=lambda table: '{:.1%}'.format(sum(x.NplBalans+x.ToxBalans for x in table.data)/sum(x.PorBalans for x in table.data)))
     ResBalans = tables.Column(
         attrs=attr_right_text,
         verbose_name="Резервы",
         footer=lambda table: sum(x.ResBalans for x in table.data)
     )
+    ResCover = tables.Column(
+        accessor='reserve_cover',
+        attrs=attr_right_text,
+        verbose_name="Покрытие резервами",
+        footer=lambda table: '{:.1%}'.format(sum(x.ResBalans for x in table.data)/sum(x.NplBalans+x.ToxBalans for x in table.data))
+    )
     class Meta:
         model = ByTerms
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark"}}
+        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
+        sequence = ('Title', 'PorBalans', 'PorPercent', 'NplBalans', 'ToxBalans', 'NplToxic', 'TKNWeight', 'ResBalans')
         orderable = False
         exclude = ('id',)
 
-class ByTermTable(tables.Table):
-    attr = {"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    name    = tables.Column()
-    portfel = tables.Column(attrs=attr)
-    ration = tables.Column(attrs=attr)
-    npl     = tables.Column(attrs=attr)
-    toxic   = tables.Column(attrs=attr)
-    npl_toxic  = tables.Column(attrs=attr)
-    weight  = tables.Column(attrs=attr)
-    rezerv  = tables.Column(attrs=attr)
-    coating  = tables.Column(attrs=attr)
-
-
-    class Meta:
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
-        orderable = False
-
 class BySubjectTable(tables.Table):
     attr={"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    TITLE       = tables.Column(verbose_name="Статус")
+    TITLE       = tables.Column(verbose_name="Статус", footer="Итого:")
     LOAN        = tables.Column(attrs=attr, verbose_name="Кредитный портфель")
     RATION      = tables.Column(attrs=attr, verbose_name="Доля %")
     NPL_LOAN    = tables.Column(attrs=attr, verbose_name="NPL")
     TOX_LOAN    = tables.Column(attrs=attr, verbose_name="Токсичные кредиты")
     TOX_NPL     = tables.Column(attrs=attr, verbose_name="ТК+NPL")
-    WEIGHT      = tables.Column(attrs=attr, verbose_name="удельный вес к своему портфелю")
+    WEIGHT      = tables.Column(attrs=attr, verbose_name="удельный вес")
     RESERVE     = tables.Column(attrs=attr, verbose_name="Резервы")
-    COATING     = tables.Column(attrs=attr, verbose_name="Покрытие ПК+NPL резервами")
+    COATING     = tables.Column(attrs=attr, verbose_name="Покрытие резервами")
 
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
+        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
         orderable = False
 
 class ByPercentageTable(tables.Table):

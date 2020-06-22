@@ -72,7 +72,7 @@ def npls(request):
         "page_title": "NPL кредиты",
         "data_table": table,
         "data_month": sMonth.strftime('%Y-%m'),
-        "npls_page": "active"
+        "npls_page": "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)
@@ -90,7 +90,7 @@ def toxics(request):
         "page_title": "Токсичные кредиты",
         "data_table": table,
         "data_month": sMonth.strftime('%Y-%m'),
-        "toxics_page" : "active"
+        "toxics_page" : "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)
@@ -107,7 +107,7 @@ def overdues(request):
         "page_title": "Просроченные кредиты",
         "data_table": table,
         "data_month": sMonth.strftime('%Y-%m'),
-        "overdues_page": "active"
+        "overdues_page": "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)
@@ -161,94 +161,48 @@ def byterms(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    data = ByTerms.objects.raw(Query.named_query_byterms(), [report.id])
-    # total   = sum(c['PorBalans'] for c in data)
-    table1 = ByTermsTable(data)
+    data = ByTerms.objects.raw(Query.named_query_byterms(), [report.id, report.id])
+    table = ByTermsTable(data)
 
     context = {
         "page_title": "В разбивке по срокам",
-        "data_table": table1,
-        "data_month": request.session['data_month'],
-        "byterms_page": "active"
+        "data_table": table,
+        "data_month": sMonth.strftime('%Y-%m'),
+        "byterms_page": "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)
 
 def bysubjects(request):
     setReviewMonthInSession(request)
-    cursor = connection.cursor()
-    cursor.execute(Query.named_query_bysubjects())
-    
-    listBySubject = [5]
-    for row in CursorByName(cursor):
-        row['LOAN']     = int(row['LOAN'])
-        row['RATION']   = '{:.1%}'.format(row['RATION'])
-        row['NPL_LOAN'] = int(row['NPL_LOAN'])
-        row['TOX_LOAN'] = int(row['TOX_LOAN'])
-        row['TOX_NPL']  = int(row['TOX_NPL'])
-        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
-        row['RESERVE']  = int(row['RESERVE'])
-        row['COATING']  = '{:.1%}'.format(row['COATING'])
-        listBySubject.append(row) 
-        
-    total = {}
-    total['TITLE']    = 'Итого'
-    total['LOAN']       = sum(c['LOAN'] for c in listBySubject[1:6])
-    total['RATION']     = '100%' 
-    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySubject[1:6]) 
-    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySubject[1:6]) 
-    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySubject[1:6]) 
-    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
-    total['RESERVE']    = sum(c['RESERVE'] for c in listBySubject[1:6]) 
-    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
-    listBySubject.append(total)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    table = BySubjectTable(listBySubject[1:])
-    table.paginate(page=request.GET.get("page", 1), per_page=10)
+    data = ByTerms.objects.raw(Query.named_query_bysubjects(), [report.id, report.id])
+    table = ByTermsTable(data)
 
     context = {
         "page_title": "В разбивке по субъектам",
         "data_table": table,
-        "data_month": request.session['data_month'],
-        "bysubjects_page": "active"
+        "data_month": sMonth.strftime('%Y-%m'),
+        "bysubjects_page": "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)
 
 def bysegments(request):
     setReviewMonthInSession(request)
-    cursor = connection.cursor()
-    cursor.execute(Query.named_query_bysegments())
-    listBySegment = [5]
-    for row in CursorByName(cursor):
-        row['LOAN']     = int(row['LOAN'])
-        row['RATION']   = '{:.1%}'.format(row['RATION'])
-        row['NPL_LOAN'] = int(row['NPL_LOAN'])
-        row['TOX_LOAN'] = int(row['TOX_LOAN'])
-        row['TOX_NPL']  = int(row['TOX_NPL'])
-        row['WEIGHT']   = '{:.1%}'.format(row['WEIGHT'])
-        row['RESERVE']  = int(row['RESERVE'])
-        row['COATING']  = '{:.1%}'.format(row['COATING'])
-        listBySegment.append(row) 
-    
-    total = {}
-    total['TITLE']      = 'Итого'
-    total['LOAN']       = sum(c['LOAN'] for c in listBySegment[1:])
-    total['RATION']     = '100%' 
-    total['NPL_LOAN']   = sum(c['NPL_LOAN'] for c in listBySegment[1:]) 
-    total['TOX_LOAN']   = sum(c['TOX_LOAN'] for c in listBySegment[1:]) 
-    total['TOX_NPL']    = sum(c['TOX_NPL'] for c in listBySegment[1:]) 
-    total['WEIGHT']     = '{:.1%}'.format(total['TOX_NPL']/total['LOAN']) 
-    total['RESERVE']    = sum(c['RESERVE'] for c in listBySegment[1:]) 
-    total['COATING']    = '{:.1%}'.format(total['RESERVE']/total['TOX_NPL']) 
-    listBySegment.append(total)
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    table = BySubjectTable(listBySegment[1:])
+    data = ByTerms.objects.raw(Query.named_query_bysegments(), [report.id, report.id])
+    table = ByTermsTable(data)
+
     context = {
         "page_title": "В разбивке по сегментам",
         "data_table": table,
-        "data_month": request.session['data_month'],
-        "bysegments_page": "active"
+        "data_month": sMonth.strftime('%Y-%m'),
+        "bysegments_page": "font-weight-bold"
     }
 
     return render(request, 'credits/view.html', context)

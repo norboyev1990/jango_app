@@ -149,7 +149,7 @@ class Query():
                                 THEN SUBSTR(CREDIT_SCHET,10,8)
                                 ELSE SUBSTR(INN_PASSPORT,11,9) 
                                 END	AS UNIQUE_CODE,
-                        JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS),
+                        DAYCOUNT,
                         OSTATOK_SUDEB, 
                         OSTATOK_VNEB_PROSR,
                         OSTATOK_PERESM,
@@ -160,15 +160,18 @@ class Query():
                             CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
                                 THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
                                 ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
-                                END	AS TERM
+                                END	AS TERM,
+                            JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS) AS DAYCOUNT
                         FROM CREDITS_REPORTDATA R
                         LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                        LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
                         WHERE REPORT_ID = %s
                     ) T
                 ),
                     
-                PORTFOLIO_TABLE (GROUPS, BALANS) AS (
-                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                PORTFOLIO_TABLE (GROUPS, BALANS, TOTALS) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST),
+                    (SELECT SUM(VSEGO_ZADOLJENNOST) FROM CREDITS_REPORTDATA WHERE REPORT_ID=%s) AS TOTALS
                     FROM REPORT_DATA_TABLE
                     GROUP BY GROUPS
                 ),
@@ -211,6 +214,97 @@ class Query():
                 M.GROUPS AS id,
                 M.Title AS Title,
                 IFNULL(P.BALANS/1000000,0) AS PorBalans,
+                IFNULL(P.BALANS*100/P.TOTALS,0) AS PorPercent,
+                IFNULL(N.BALANS/1000000,0) AS NplBalans,
+                IFNULL(T.BALANS/1000000,0) AS ToxBalans,
+                IFNULL(R.BALANS/1000000,0) AS ResBalans,
+                IFNULL((N.BALANS+T.BALANS)/1000000,0) AS NplToxic
+            FROM MAIN_TABLE M
+            LEFT JOIN PORTFOLIO_TABLE P  ON P.GROUPS = M.GROUPS
+            LEFT JOIN NPL_TABLE N  ON N.GROUPS = M.GROUPS
+            LEFT JOIN TOX_TABLE T  ON T.GROUPS = M.GROUPS
+            LEFT JOIN RES_TABLE R  ON R.GROUPS = M.GROUPS
+            ORDER BY M.GROUPS
+        '''
+
+    def named_query_bysubjects():
+        return '''
+            WITH RECURSIVE
+                MAIN_TABLE (GROUPS, TITLE) AS (
+                    SELECT 1, 'ЮЛ' UNION
+                    SELECT GROUPS + 1, CASE GROUPS +1 
+					WHEN 2 THEN 'ИП' ELSE 'ФЛ' END AS TITLE	
+                    FROM MAIN_TABLE LIMIT 3),
+                    
+                REPORT_DATA_TABLE (
+                    GROUPS, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, 
+                    OSTATOK_VNEB_PROSR, OSTATOK_PERESM, OSTATOK_REZERV, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE T.NAME 
+							WHEN 'ЮЛ' THEN 1 
+							WHEN 'ИП' THEN 2 ELSE 3 END AS GROUPS, 
+                        CASE T.SUBJ WHEN 'J' 
+							THEN SUBSTR(CREDIT_SCHET,10,8)
+                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+							END AS UNIQUE_CODE,
+                        JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS),
+                        OSTATOK_SUDEB, 
+                        OSTATOK_VNEB_PROSR,
+                        OSTATOK_PERESM,
+                        OSTATOK_REZERV,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+					LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                    WHERE REPORT_ID = %s
+                ),
+                    
+                PORTFOLIO_TABLE (GROUPS, BALANS, TOTALS) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST),
+                    (SELECT SUM(VSEGO_ZADOLJENNOST) FROM CREDITS_REPORTDATA WHERE REPORT_ID=%s) AS TOTALS
+                    FROM REPORT_DATA_TABLE
+                    GROUP BY GROUPS
+                ),
+
+                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                NPL_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM NPL_UNIQUE_TABLE N
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE OSTATOK_PERESM IS NOT NULL AND (DAYS < 90 OR DAYS IS NULL) 
+                        AND OSTATOK_SUDEB IS NULL AND OSTATOK_VNEB_PROSR IS NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                TOX_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM TOX_UNIQUE_TABLE T
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = T.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                RES_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(OSTATOK_REZERV)
+                    FROM REPORT_DATA_TABLE D
+                    GROUP BY GROUPS
+                )
+            SELECT 
+                M.GROUPS AS id,
+                M.Title AS Title,
+                IFNULL(P.BALANS/1000000,0) AS PorBalans,
+                IFNULL(P.BALANS*100/P.TOTALS,0) AS PorPercent,
                 IFNULL(N.BALANS/1000000,0) AS NplBalans,
                 IFNULL(T.BALANS/1000000,0) AS ToxBalans,
                 IFNULL(R.BALANS/1000000,0) AS ResBalans
@@ -222,220 +316,92 @@ class Query():
             ORDER BY M.GROUPS
         '''
 
-    def named_query_bysubjects():
-        return '''WITH 
-                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
-                                SELECT 
-                                    CASE T.NAME 
-                                        WHEN 'ЮЛ' THEN 1 
-                                        WHEN 'ИП' THEN 2 
-                                        ELSE 3 END AS GROUPS,
-                                    T.NAME AS TITLE, 
-                                    SUM(VSEGO_ZADOLJENNOST)
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID = 86
-                                GROUP BY GROUPS),
-                                
-                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
-                                SELECT 
-                                    CASE T.NAME 
-                                        WHEN 'ЮЛ' THEN 1 
-                                        WHEN 'ИП' THEN 2 
-                                        ELSE 3 END AS GROUPS,
-                                    VSEGO_ZADOLJENNOST, 
-                                    OSTATOK_REZERV,
-                                    CASE WHEN T.SUBJ = 'J' 
-                                    THEN SUBSTR(CREDIT_SCHET,10,8)
-                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                    END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID = 86),
-                                
-                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
-                                SELECT
-                                    CASE T.SUBJ WHEN 'J' 
-                                        THEN SUBSTR(CREDIT_SCHET,10,8)
-                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                        END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
-                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
-                                GROUP BY UNIQUE_CODE
-                            ),
-
-                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
-                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
-                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
-                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
-                                GROUP BY GROUPS
-                            ),
-
-                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
-                                SELECT
-                                    CASE T.SUBJ WHEN 'J' 
-                                        THEN SUBSTR(CREDIT_SCHET,10,8)
-                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                        END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE R.REPORT_ID = 86
-                                GROUP BY UNIQUE_CODE, NAME_CLIENT
-                                HAVING 
-                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
-                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
-                                    SUM(OSTATOK_SUDEB) IS NULL AND (
-                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
-                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
-                            ),
-
-                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
-                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
-                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
-                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
-                                GROUP BY GROUPS
-                            ),
-
-                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
-                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
-                                FROM REPORT_DATA_TABLE D
-                                GROUP BY GROUPS
-                            )
-
-                            SELECT *, 
-                            LOAN/TOTALS AS RATION,
-                            NPL_LOAN+TOX_LOAN AS TOX_NPL,
-                            (NPL_LOAN+TOX_LOAN)/TOTALS AS WEIGHT,
-                            RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
-                            FROM (	
-                            SELECT 
-                                M.TITLE,
-                                M.GROUPS,
-                                M.TOTAL_LOAN/1000000 AS LOAN,
-                                N.TOTAL_LOAN/1000000 AS NPL_LOAN,
-                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
-                                    THEN T.TOTAL_LOAN/1000000
-                                    ELSE 0 END AS TOX_LOAN,
-                                R.TOTAL_RESERVE/1000000 AS RESERVE,
-                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
-                            FROM MAIN_TABLE M
-                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
-                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
-                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
-                            )
-                            ORDER BY GROUPS
-                '''
-
     def named_query_bysegments():
-        return '''WITH 
-                            MAIN_TABLE (GROUPS, TITLE, TOTAL_LOAN) AS (
-                                SELECT 
-                                    CASE WHEN T.SUBJ = 'J' THEN 
-                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
-                                        THEN 1 ELSE 2 END ELSE 3 
-                                        END	AS GROUPS,
-                                    CASE WHEN T.SUBJ = 'J' THEN 
-                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
-                                        THEN 'Инв. проект' ELSE 'ЮЛ' END ELSE 'ФЛ' 
-                                        END	AS TITLE,
-                                    SUM(VSEGO_ZADOLJENNOST)
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID = 86
-                                GROUP BY GROUPS),
-                                
-                            REPORT_DATA_TABLE (GROUPS, VSEGO_ZADOLJENNOST, OSTATOK_REZERV, UNIQUE_CODE) AS (
-                                SELECT 
-                                    CASE WHEN T.SUBJ = 'J' THEN 
-                                        CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
-                                        THEN 1 ELSE 2 END ELSE 3 
-                                        END	AS GROUPS,
-                                    VSEGO_ZADOLJENNOST, 
-                                    OSTATOK_REZERV,
-                                    CASE WHEN T.SUBJ = 'J' 
-                                    THEN SUBSTR(CREDIT_SCHET,10,8)
-                                    ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                    END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID = 86),
-                                
-                            NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
-                                SELECT
-                                    CASE T.SUBJ WHEN 'J' 
-                                        THEN SUBSTR(CREDIT_SCHET,10,8)
-                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                        END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE REPORT_ID=86 AND (JULIANDAY('2020-04-01') - JULIANDAY(DATE_OBRAZ_PROS) > 90
-                                    OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL)
-                                GROUP BY UNIQUE_CODE
-                            ),
-                            
-                            NPL_TABLE (GROUPS, TOTAL_LOAN) AS (
-                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
-                                    SELECT D.* FROM NPL_UNIQUE_TABLE NPL
-                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = NPL.UNIQUE_CODE)
-                                GROUP BY GROUPS
-                            ),
-                            
-                            TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
-                                SELECT
-                                    CASE T.SUBJ WHEN 'J' 
-                                        THEN SUBSTR(CREDIT_SCHET,10,8)
-                                        ELSE SUBSTR(INN_PASSPORT,11,9) 
-                                        END	AS UNIQUE_CODE
-                                FROM CREDITS_REPORTDATA R
-                                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                                WHERE R.REPORT_ID = 86
-                                GROUP BY UNIQUE_CODE, NAME_CLIENT
-                                HAVING 
-                                    SUM(OSTATOK_PERESM) IS NOT NULL AND 
-                                    SUM(OSTATOK_VNEB_PROSR) IS NULL AND 
-                                    SUM(OSTATOK_SUDEB) IS NULL AND (
-                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 OR 
-                                    JULIANDAY('2020-04-01') - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL)
-                            ),
-                            
-                            TOX_TABLE (GROUPS, TOTAL_LOAN) AS (
-                                SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) FROM (
-                                    SELECT D.* FROM TOX_UNIQUE_TABLE TOX
-                                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = TOX.UNIQUE_CODE)
-                                GROUP BY GROUPS
-                            ),
-                            
-                            REZ_TABLE (GROUPS, TOTAL_RESERVE) AS (
-                                SELECT GROUPS, SUM(OSTATOK_REZERV) 
-                                FROM REPORT_DATA_TABLE D
-                                GROUP BY GROUPS
-                            )
-                            
-                        SELECT *, 
-                        LOAN/TOTALS AS RATION,
-                        NPL_LOAN+TOX_LOAN AS TOX_NPL,
-                        (NPL_LOAN+TOX_LOAN)/LOAN AS WEIGHT,
-                        RESERVE/(NPL_LOAN+TOX_LOAN) AS COATING
-                        FROM (	
-                            SELECT 
-                                M.TITLE,
-                                M.GROUPS,
-                                M.TOTAL_LOAN/1000000 AS LOAN,
-                                N.TOTAL_LOAN/1000000 AS NPL_LOAN,
-                                CASE WHEN T.TOTAL_LOAN IS NOT NULL 
-                                    THEN T.TOTAL_LOAN/1000000
-                                    ELSE 0 END AS TOX_LOAN,
-                                R.TOTAL_RESERVE/1000000 AS RESERVE,
-                                (SELECT SUM(TOTAL_LOAN)/1000000 FROM MAIN_TABLE) AS TOTALS
-                            FROM MAIN_TABLE M
-                            LEFT JOIN NPL_TABLE N ON N.GROUPS = M.GROUPS
-                            LEFT JOIN TOX_TABLE T ON T.GROUPS = M.GROUPS
-                            LEFT JOIN REZ_TABLE R ON R.GROUPS = M.GROUPS
-                        )
-                        ORDER BY GROUPS
-                '''
+        return '''
+            WITH RECURSIVE       
+                REPORT_DATA_TABLE (
+                    GROUPS,	TITLE, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, 
+                    OSTATOK_VNEB_PROSR, OSTATOK_PERESM, OSTATOK_REZERV, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE WHEN T.SUBJ = 'J' THEN 
+							CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
+							THEN 1 ELSE 2 END ELSE 3 
+							END	AS GROUPS,
+						CASE WHEN T.SUBJ = 'J' THEN 
+							CASE WHEN SUBSTR(OBESPECHENIE,1,2) == '42' 
+							THEN 'Инв. проект' ELSE 'ЮЛ' END ELSE 'ФЛ' 
+							END	AS TITLE,
+                        CASE T.SUBJ WHEN 'J' 
+							THEN SUBSTR(CREDIT_SCHET,10,8)
+                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+							END AS UNIQUE_CODE,
+                        JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS),
+                        OSTATOK_SUDEB, 
+                        OSTATOK_VNEB_PROSR,
+                        OSTATOK_PERESM,
+                        OSTATOK_REZERV,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+					LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                    WHERE REPORT_ID = %s
+                ),
+                    
+                PORTFOLIO_TABLE (GROUPS, TITLE, BALANS, TOTALS) AS (
+                    SELECT GROUPS, TITLE, SUM(VSEGO_ZADOLJENNOST),
+                    (SELECT SUM(VSEGO_ZADOLJENNOST) FROM CREDITS_REPORTDATA WHERE REPORT_ID=%s) AS TOTALS
+                    FROM REPORT_DATA_TABLE
+                    GROUP BY GROUPS
+                ),
+
+                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                NPL_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM NPL_UNIQUE_TABLE N
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                TOX_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE OSTATOK_PERESM IS NOT NULL AND (DAYS < 90 OR DAYS IS NULL) 
+                        AND OSTATOK_SUDEB IS NULL AND OSTATOK_VNEB_PROSR IS NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                TOX_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM TOX_UNIQUE_TABLE T
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = T.UNIQUE_CODE
+                    GROUP BY GROUPS
+                ),
+                
+                RES_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(OSTATOK_REZERV)
+                    FROM REPORT_DATA_TABLE D
+                    GROUP BY GROUPS
+                )
+            SELECT 
+                P.GROUPS AS id,
+                P.Title AS Title,
+                IFNULL(P.BALANS/1000000,0) AS PorBalans,
+                IFNULL(P.BALANS*100/P.TOTALS,0) AS PorPercent,
+                IFNULL(N.BALANS/1000000,0) AS NplBalans,
+                IFNULL(T.BALANS/1000000,0) AS ToxBalans,
+                IFNULL(R.BALANS/1000000,0) AS ResBalans
+            FROM PORTFOLIO_TABLE P
+            LEFT JOIN NPL_TABLE N  ON N.GROUPS = P.GROUPS
+            LEFT JOIN TOX_TABLE T  ON T.GROUPS = P.GROUPS
+            LEFT JOIN RES_TABLE R  ON R.GROUPS = P.GROUPS
+            ORDER BY P.GROUPS
+        '''
 
     def named_query_bycurrency():
         return '''WITH 
