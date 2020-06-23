@@ -1,17 +1,17 @@
-from django_tables2 import SingleTableView
-from .functions import CursorByName
-from .queries import Query
-from .tables import *
-from django.shortcuts import render
-from .models import *
-from django.db import connection
 import pandas as pd
-from pandas import DataFrame
 import numpy as np
+from django.shortcuts import render
+from django.db import connection
+from io import BytesIO
+from pandas import DataFrame
 from datetime import datetime
 from django.http import HttpResponse, HttpResponseRedirect
-from io import BytesIO
+from django_tables2 import SingleTableView
 from openpyxl import *
+from .functions import CursorByName
+from .queries import Query
+from .models import *
+from .tables import *
 # Create your views here.
 
 def setReviewMonthInSession(request):
@@ -333,7 +333,6 @@ def byaverageweight_fl(request):
     }
 
     return render(request, 'credits/view.html', context)
-
 
 def byretailproduct(request):
     setReviewMonthInSession(request)
