@@ -6,6 +6,8 @@ class ListReports(models.Model):
     REPORT_MONTH = models.IntegerField()
     REPORT_YEAR  = models.IntegerField()
     DATE_CREATED = models.DateTimeField(null=True)
+    START_MONTH  = models.DateTimeField(null=True)
+
     def __str__(self):
         return self.REPORT_TITLE
 
@@ -152,6 +154,34 @@ class ByTerms(models.Model):
     def reserve_cover(self):
         return '{:.1%}'.format(self.ResBalans/(self.NplBalans+self.ToxBalans))
 
+
+    class Meta:
+        managed  = False
+
+class ByPercentage(models.Model):
+    Number    = models.CharField(max_length=255, verbose_name="№")
+    Title     = models.CharField(max_length=255, verbose_name="Коридор")
+    ULLongTerm = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Долгосрочные ЮЛ")
+    ULLongPart = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля, %")
+    ULShortTerm = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Краткосрочные ЮЛ")
+    ULShortPart = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля, %")
+    FLLongTerm = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Долгосрочные ФЛ")
+    FLLongPart = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля, %")
+    FLShortTerm = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Краткосрочные ФЛ")
+    FLShortPart = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля, %")
+
+    class Meta:
+        managed  = False
+
+class ByPercentageUL(models.Model):
+    Number  = models.CharField(max_length=255, verbose_name="№")
+    Title   = models.CharField(max_length=255, verbose_name="Коридор")
+    Term1   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="до 2-х лет")
+    Term2   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="от 2-х до 5 лет")
+    Term3   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="от 5-ти до 7 лет")
+    Term4   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="от 7-ми до 10 лет")
+    Term5   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="свыше 10 лет")
+    
 
     class Meta:
         managed  = False

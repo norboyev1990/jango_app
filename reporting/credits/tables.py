@@ -59,52 +59,23 @@ class OverallInfoTable(tables.Table):
         orderable = False
 
 class ByTermsTable(tables.Table):
-    Title = tables.Column(
-        attrs={"td":{"class":"text-truncate"}},
-        verbose_name="Сроки",
-        footer="Итого:")
-    PorBalans = tables.Column(
-        attrs=attr_right_text,
-        verbose_name="Кредитный портфель",
-        footer=lambda table: sum(x.PorBalans for x in table.data)
-    )
-    PorPercent = tables.Column(
-        attrs=attr_right_text,
-        verbose_name="Доля, %",
-        footer="100%"
-    )
-    NplBalans = tables.Column(
-        attrs=attr_right_text,
-        verbose_name="NPL",
-        footer=lambda table: sum(x.NplBalans for x in table.data)
-    )
-    ToxBalans = tables.Column(
-        attrs=attr_right_text,
-        verbose_name="Токсичные кредиты",
-        footer=lambda table: sum(x.ToxBalans for x in table.data)
-    )
-    NplToxic = tables.Column(
-        accessor='amount_npl_toxic',
-        attrs=attr_right_text,
-        verbose_name="ТК + NPL",
-        footer=lambda table: sum(x.NplBalans+x.ToxBalans for x in table.data)
-    )
-    TKNWeight = tables.Column(
-        accessor='weight_npl_toxic',
-        attrs=attr_right_text,
-        verbose_name="Удельный вес",
+    Title = tables.Column(attrs={"td":{"class":"text-truncate"}}, verbose_name="Сроки", footer="Итого:")
+    PorBalans = tables.Column(attrs=attr_right_text, verbose_name="Кредитный портфель",
+        footer=lambda table: sum(x.PorBalans for x in table.data))
+    PorPercent = tables.Column(attrs=attr_right_text, verbose_name="Доля, %", footer="100%")
+    NplBalans = tables.Column(attrs=attr_right_text, verbose_name="NPL",
+        footer=lambda table: sum(x.NplBalans for x in table.data))
+    ToxBalans = tables.Column(attrs=attr_right_text, verbose_name="Токсичные кредиты",
+        footer=lambda table: sum(x.ToxBalans for x in table.data))
+    NplToxic = tables.Column(accessor='amount_npl_toxic', attrs=attr_right_text, verbose_name="ТК + NPL",
+        footer=lambda table: sum(x.NplBalans+x.ToxBalans for x in table.data))
+    TKNWeight = tables.Column(accessor='weight_npl_toxic', attrs=attr_right_text, verbose_name="Удельный вес",
         footer=lambda table: '{:.1%}'.format(sum(x.NplBalans+x.ToxBalans for x in table.data)/sum(x.PorBalans for x in table.data)))
-    ResBalans = tables.Column(
-        attrs=attr_right_text,
-        verbose_name="Резервы",
-        footer=lambda table: sum(x.ResBalans for x in table.data)
-    )
-    ResCover = tables.Column(
-        accessor='reserve_cover',
-        attrs=attr_right_text,
-        verbose_name="Покрытие резервами",
-        footer=lambda table: '{:.1%}'.format(sum(x.ResBalans for x in table.data)/sum(x.NplBalans+x.ToxBalans for x in table.data))
-    )
+    ResBalans = tables.Column(attrs=attr_right_text, verbose_name="Резервы",
+        footer=lambda table: sum(x.ResBalans for x in table.data))
+    ResCover = tables.Column(accessor='reserve_cover', attrs=attr_right_text, verbose_name="Покрытие резервами",
+        footer=lambda table: '{:.1%}'.format(sum(x.ResBalans for x in table.data)/sum(x.NplBalans+x.ToxBalans for x in table.data)))
+    
     class Meta:
         model = ByTerms
         template_name = "django_tables2/bootstrap.html"
@@ -113,79 +84,77 @@ class ByTermsTable(tables.Table):
         orderable = False
         exclude = ('id',)
 
-class BySubjectTable(tables.Table):
-    attr={"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    TITLE       = tables.Column(verbose_name="Статус", footer="Итого:")
-    LOAN        = tables.Column(attrs=attr, verbose_name="Кредитный портфель")
-    RATION      = tables.Column(attrs=attr, verbose_name="Доля %")
-    NPL_LOAN    = tables.Column(attrs=attr, verbose_name="NPL")
-    TOX_LOAN    = tables.Column(attrs=attr, verbose_name="Токсичные кредиты")
-    TOX_NPL     = tables.Column(attrs=attr, verbose_name="ТК+NPL")
-    WEIGHT      = tables.Column(attrs=attr, verbose_name="удельный вес")
-    RESERVE     = tables.Column(attrs=attr, verbose_name="Резервы")
-    COATING     = tables.Column(attrs=attr, verbose_name="Покрытие резервами")
-
+class ByPercentageTable(tables.Table):
+    Title = tables.Column(verbose_name="Коридор", attrs={"td":{"class":"text-truncate"}}, footer="Итого:")
+    ULLongTerm  = tables.Column(verbose_name="Долгосрочные ЮЛ", attrs=attr_right_text, 
+        footer=lambda table: sum(x.ULLongTerm for x in table.data))
+    ULShortTerm = tables.Column(verbose_name="Краткосрочные ЮЛ", attrs=attr_right_text, 
+        footer=lambda table: sum(x.ULShortTerm for x in table.data))
+    FLLongTerm  = tables.Column(verbose_name="Долгосрочные ФЛ", attrs=attr_right_text, 
+        footer=lambda table: sum(x.FLLongTerm for x in table.data))
+    FLShortTerm = tables.Column(verbose_name="Краткосрочные ФЛ", attrs=attr_right_text, 
+        footer=lambda table: sum(x.FLShortTerm for x in table.data))
+    ULLongPart  = tables.Column(verbose_name="Доля, %", attrs=attr_right_text, 
+        footer=lambda table: sum(x.ULLongPart for x in table.data))
+    ULShortPart = tables.Column(verbose_name="Доля, %", attrs=attr_right_text, 
+        footer=lambda table: sum(x.ULShortPart for x in table.data))
+    FLLongPart  = tables.Column(verbose_name="Доля, %", attrs=attr_right_text, 
+        footer=lambda table: sum(x.FLLongPart for x in table.data))
+    FLShortPart = tables.Column(verbose_name="Доля, %", attrs=attr_right_text, 
+        footer=lambda table: sum(x.FLShortPart for x in table.data))
     class Meta:
+        model = ByPercentage
         template_name = "django_tables2/bootstrap.html"
         attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
         orderable = False
+        exclude = ('id',)
 
-class ByPercentageTable(tables.Table):
-    attr={"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    TITLE       = tables.Column(verbose_name = "Коридор")
-    ULL_LOAN    = tables.Column(attrs=attr, verbose_name = "Долгосрочные ЮЛ")
-    ULL_PERCENT = tables.Column(attrs=attr, verbose_name = "Доля %")
-    ULS_LOAN    = tables.Column(attrs=attr, verbose_name = "Краткосрочные ЮЛ")
-    ULS_PERCENT = tables.Column(attrs=attr, verbose_name = "Доля %")
-    FLL_LOAN    = tables.Column(attrs=attr, verbose_name = "Долгосрочные ФЛ")
-    FLL_PERCENT = tables.Column(attrs=attr, verbose_name = "Доля %")
-    FLS_LOAN    = tables.Column(attrs=attr, verbose_name = "Краткосрочные ФЛ")
-    FLS_PERCENT = tables.Column(attrs=attr, verbose_name = "Доля %")
-    
-    class Meta:
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
-        orderable = False
 
 class ByPercentageULTable(tables.Table):
-    attr={"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    TITLE       = tables.Column(verbose_name = "Коридор")
-    T2_LOAN    = tables.Column(attrs=attr, verbose_name = "до 2-х лет")
-    T2_PERCENT    = tables.Column(attrs=attr, verbose_name = "Доля %")
-    T5_LOAN    = tables.Column(attrs=attr, verbose_name = "от 2-х до 5 лет")
-    T5_PERCENT    = tables.Column(attrs=attr, verbose_name = "Доля %")
-    T7_LOAN    = tables.Column(attrs=attr, verbose_name = "от 5-ти до 7 лет")
-    T7_PERCENT    = tables.Column(attrs=attr, verbose_name = "Доля %")
-    T10_LOAN    = tables.Column(attrs=attr, verbose_name = "от 7-ми до 10 лет")
-    T10_PERCENT    = tables.Column(attrs=attr, verbose_name = "Доля %")
-    T11_LOAN    = tables.Column(attrs=attr, verbose_name = "свыше 10 лет")
-    T11_PERCENT    = tables.Column(attrs=attr, verbose_name = "Доля %")
-    
+    Title = tables.Column(verbose_name="Коридор", attrs={"td":{"class":"text-truncate"}}, footer="Итого:")
+    Term1  = tables.Column(verbose_name="до 2-х лет", attrs=attr_right_text, footer=lambda table: sum(x.Term1 for x in table.data))
+    Term2  = tables.Column(verbose_name="от 2-х до 5 лет", attrs=attr_right_text, footer=lambda table: sum(x.Term2 for x in table.data))
+    Term3  = tables.Column(verbose_name="от 5-ти до 7 лет", attrs=attr_right_text, footer=lambda table: sum(x.Term3 for x in table.data))
+    Term4  = tables.Column(verbose_name="от 7-ми до 10 лет", attrs=attr_right_text, footer=lambda table: sum(x.Term4 for x in table.data))
+    Term5  = tables.Column(verbose_name="свыше 10 лет", attrs=attr_right_text, footer=lambda table: sum(x.Term5 for x in table.data))
     class Meta:
+        model = ByPercentageUL
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
+        attrs = {
+            "class": "table table-centered table-hover mb-0", 
+            "thead": {"class": "thead-dark text-truncate"}, 
+            "tfoot": {"class": "bg-light"}}
         orderable = False
+        exclude = ('id',)
 
 class ByAverageULTable(tables.Table):
-    attr={"th":{"class":"text-right"}, "td":{"class":"text-right"}}
-    TITLE       = tables.Column(verbose_name = "Срок")
-    UZS_AVERAGE    = tables.Column(attrs=attr, verbose_name = "UZS")
-    USD_AVERAGE    = tables.Column(attrs=attr, verbose_name = "USD")
-    EUR_AVERAGE    = tables.Column(attrs=attr, verbose_name = "EUR")
-    JPY_AVERAGE    = tables.Column(attrs=attr, verbose_name = "JPY")
+    TITLE       = tables.Column(verbose_name = "Срок", footer="Итого:")
+    UZS_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "UZS")
+    USD_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "USD")
+    EUR_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "EUR")
+    JPY_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "JPY")
     
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
+        attrs = {
+            "class": "table table-centered table-hover mb-0", 
+            "thead": {"class": "thead-dark text-truncate"}, 
+            "tfoot": {"class": "bg-light"}}
         orderable = False
 
 class ByAverageFLTable(tables.Table):
-    TITLE       = tables.Column()
-    BALANS    = tables.Column(attrs={"th":{"class":"text-right"}, "td":{"class":"text-right"}})
+    TITLE     = tables.Column(verbose_name="Продукты", footer="Итого:")
+    BALANS    = tables.Column(attrs=attr_right_text, verbose_name = "UZS",
+        footer=lambda table: '{:.1f}'.format(
+            sum(item['CREDIT'] for item in table.data)/sum(item['LOAN'] for item in table.data))
+    )
     
     class Meta:
         template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-striped #table-bordered table-head-custom  table-overall"}
+        attrs = {
+            "class": "table table-centered table-hover mb-0", 
+            "thead": {"class": "thead-dark text-truncate"}, 
+            "tfoot": {"class": "bg-light"}}
         orderable = False
 
 class ContractListTable(tables.Table):

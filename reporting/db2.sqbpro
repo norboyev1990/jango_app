@@ -1,66 +1,283 @@
-<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/BankProjects/reporting/db.sqlite3" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="12370"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,18:maincredits_reportdata"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="credits_branch" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="42"/><column index="3" value="118"/><column index="4" value="41"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_currency" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="41"/><column index="3" value="44"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_reportdata" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="42"/><column index="2" value="59"/><column index="3" value="73"/><column index="4" value="42"/><column index="5" value="300"/><column index="6" value="147"/><column index="7" value="130"/><column index="8" value="75"/><column index="9" value="105"/><column index="10" value="101"/><column index="11" value="111"/><column index="12" value="105"/><column index="13" value="101"/><column index="14" value="109"/><column index="15" value="134"/><column index="16" value="117"/><column index="17" value="115"/><column index="18" value="154"/><column index="19" value="124"/><column index="20" value="91"/><column index="21" value="198"/><column index="22" value="117"/><column index="23" value="134"/><column index="24" value="114"/><column index="25" value="139"/><column index="26" value="143"/><column index="27" value="123"/><column index="28" value="152"/><column index="29" value="133"/><column index="30" value="122"/><column index="31" value="157"/><column index="32" value="208"/><column index="33" value="169"/><column index="34" value="300"/><column index="35" value="300"/><column index="36" value="164"/><column index="37" value="300"/><column index="38" value="300"/><column index="39" value="300"/><column index="40" value="300"/><column index="41" value="300"/><column index="42" value="143"/><column index="43" value="120"/><column index="44" value="300"/><column index="45" value="157"/><column index="46" value="140"/><column index="47" value="157"/><column index="48" value="300"/><column index="49" value="300"/><column index="50" value="91"/><column index="51" value="101"/><column index="52" value="127"/><column index="53" value="300"/><column index="54" value="115"/><column index="55" value="76"/><column index="56" value="106"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_segment" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="41"/><column index="3" value="125"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 1">WITH NPL_VIEW (REPORT_MONTH, SUMMA_NPL) AS (
-	SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
-		SELECT 
-			L.REPORT_MONTH,
-			CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
-			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
-			SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
-		FROM CREDITS_REPORTDATA R
-		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-		LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-		WHERE L.REPORT_MONTH in (4, 3)
-		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
-		HAVING DAY_COUNT &gt; 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
-	)
-	GROUP BY REPORT_MONTH
-),
+<?xml version="1.0" encoding="UTF-8"?><sqlb_project><db path="C:/BankProjects/reporting/db.sqlite3" readonly="0" foreign_keys="1" case_sensitive_like="0" temp_store="0" wal_autocheckpoint="1000" synchronous="2"/><attached/><window><main_tabs open="structure browser pragmas query" current="3"/></window><tab_structure><column_width id="0" width="300"/><column_width id="1" width="0"/><column_width id="2" width="100"/><column_width id="3" width="12370"/><column_width id="4" width="0"/><expanded_item id="0" parent="1"/><expanded_item id="1" parent="1"/><expanded_item id="2" parent="1"/><expanded_item id="3" parent="1"/></tab_structure><tab_browse><current_table name="4,10:mainauth_group"/><default_encoding codec=""/><browse_table_settings><table schema="main" name="auth_group" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="43"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_branch" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="42"/><column index="3" value="118"/><column index="4" value="41"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_currency" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="41"/><column index="3" value="44"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_listreports" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="103"/><column index="3" value="109"/><column index="5" value="175"/><column index="6" value="101"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_reportdata" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="42"/><column index="2" value="59"/><column index="3" value="73"/><column index="4" value="42"/><column index="5" value="300"/><column index="6" value="147"/><column index="7" value="130"/><column index="8" value="75"/><column index="9" value="105"/><column index="10" value="101"/><column index="11" value="111"/><column index="12" value="105"/><column index="13" value="101"/><column index="14" value="109"/><column index="15" value="134"/><column index="16" value="117"/><column index="17" value="115"/><column index="18" value="154"/><column index="19" value="124"/><column index="20" value="91"/><column index="21" value="198"/><column index="22" value="117"/><column index="23" value="134"/><column index="24" value="114"/><column index="25" value="139"/><column index="26" value="143"/><column index="27" value="123"/><column index="28" value="152"/><column index="29" value="133"/><column index="30" value="122"/><column index="31" value="157"/><column index="32" value="208"/><column index="33" value="169"/><column index="34" value="300"/><column index="35" value="300"/><column index="36" value="164"/><column index="37" value="300"/><column index="38" value="300"/><column index="39" value="300"/><column index="40" value="300"/><column index="41" value="300"/><column index="42" value="143"/><column index="43" value="120"/><column index="44" value="300"/><column index="45" value="157"/><column index="46" value="140"/><column index="47" value="157"/><column index="48" value="300"/><column index="49" value="300"/><column index="50" value="91"/><column index="51" value="101"/><column index="52" value="127"/><column index="53" value="300"/><column index="54" value="115"/><column index="55" value="76"/><column index="56" value="106"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table><table schema="main" name="credits_segment" show_row_id="0" encoding="" plot_x_axis="" unlock_view_pk="_rowid_"><sort/><column_widths><column index="1" value="40"/><column index="2" value="41"/><column index="3" value="125"/></column_widths><filter_values/><conditional_formats/><row_id_formats/><display_formats/><hidden_columns/><plot_y_axes/><global_filter/></table></browse_table_settings></tab_browse><tab_sql><sql name="SQL 6">WITH RECURSIVE
+                MAIN_TABLE (GROUPS, TITLE) AS (
+                    SELECT 1, '20 и более'
+                    UNION
+                    SELECT GROUPS + 1,
+                        CASE GROUPS +1
+                            WHEN 2 THEN '16 - 20' 
+                            WHEN 3 THEN '11 - 15' 
+                            WHEN 4 THEN '6 - 10' 
+                            ELSE '0 - 5' END AS TITLE	
+                    FROM MAIN_TABLE LIMIT 5),
+                    
+                REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+                            WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+                            WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+                            WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+                            ELSE 5 END AS GROUPS,
+                        T.SUBJ,
+                        SROK,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    WHERE REPORT_ID = 86 AND CODE_VAL = '000'),
 
-TOXIC_VIEW (REPORT_MONTH, SUMMA_TOXIC) AS (
-	SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
-		SELECT
-			L.REPORT_MONTH,
-			CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END AS UNIQUE_CODE,
-			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
-			SUM(R.VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
-		FROM CREDITS_REPORTDATA R
-		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-		WHERE L.REPORT_MONTH in (4, 3)
-		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
-		HAVING SUM(R.OSTATOK_PERESM) IS NOT NULL AND (DAY_COUNT &lt; 90 OR DAY_COUNT IS NULL)  
-		AND SUM(R.OSTATOK_VNEB_PROSR) IS NULL AND SUM(R.OSTATOK_SUDEB) IS NULL
-	)
-	GROUP BY REPORT_MONTH
-)
-SELECT RD.id, 
-L.REPORT_MONTH, 
-SUM(VSEGO_ZADOLJENNOST)                 AS CREDIT,
-N.SUMMA_NPL                             AS NPL, 
-N.SUMMA_NPL / SUM(VSEGO_ZADOLJENNOST)   AS NPL_WEIGHT,
-T.SUMMA_TOXIC                           AS TOXIC,
-T.SUMMA_TOXIC / SUM(VSEGO_ZADOLJENNOST) AS TOXIC_WEIGHT,
-T.SUMMA_TOXIC + N.SUMMA_NPL             AS TOXIC_NPL,
-SUM(OSTATOK_REZERV)                     AS RESERVE,
-SUM(OSTATOK_REZERV) / (T.SUMMA_TOXIC + N.SUMMA_NPL) AS RESERVE_COATING,
-SUM(OSTATOK_PROSR)                      AS OVERDUE,
-SUM(OSTATOK_PROSR) / SUM(VSEGO_ZADOLJENNOST) AS OVERDUE_WEIGHT
-FROM CREDITS_REPORTDATA RD
-LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = RD.REPORT_ID
-LEFT JOIN NPL_VIEW N ON N.REPORT_MONTH = L.REPORT_MONTH
-LEFT JOIN TOXIC_VIEW T ON T.REPORT_MONTH = L.REPORT_MONTH
-WHERE L.REPORT_MONTH in (4, 3,)
-GROUP BY L.REPORT_MONTH</sql><sql name="SQL 2">SELECT REPORT_MONTH, SUM(LOAN_BALANCE) AS SUMMA_NPL FROM (
-	SELECT 
-			L.REPORT_MONTH,
-			CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
-			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
-			SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
-		FROM CREDITS_REPORTDATA R
-		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-		LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-		WHERE L.REPORT_YEAR = 2020
-		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
-		HAVING DAY_COUNT &gt; 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL)
-GROUP BY REPORT_MONTH</sql><current_tab id="1"/></tab_sql></sqlb_project>
+                UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3-'
+                    GROUP BY GROUPS
+                ),
+                
+                UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1-'
+                    GROUP BY GROUPS
+                ),
+                
+                FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3-'
+                    GROUP BY GROUPS
+                ),
+                
+                FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1-'
+                    GROUP BY GROUPS
+                )	
+            SELECT 
+                M.GROUPS AS id,
+                ROW_NUMBER () OVER (ORDER BY M.GROUPS DESC) AS Number,
+                M.TITLE AS Title,
+                IFNULL(ULL.TOTAL_LOAN/1000000,0) AS ULLongTerm,
+                IFNULL(ULS.TOTAL_LOAN/1000000,0) AS ULShortTerm,
+                IFNULL(FLL.TOTAL_LOAN/1000000,0) AS FLLongTerm,
+                IFNULL(FLS.TOTAL_LOAN/1000000,0) AS FLShortTerm,
+                IFNULL(ULL.TOTAL_LOAN/(SELECT SUM(TOTAL_LOAN) FROM UL_LONG_TABLE),0) AS ULLongPart,
+                IFNULL(ULS.TOTAL_LOAN/(SELECT SUM(TOTAL_LOAN) FROM UL_SHORT_TABLE),0) AS ULShortPart,
+                IFNULL(FLL.TOTAL_LOAN/(SELECT SUM(TOTAL_LOAN) FROM FL_LONG_TABLE),0) AS FLLongPart,
+                IFNULL(FLS.TOTAL_LOAN/(SELECT SUM(TOTAL_LOAN) FROM FL_SHORT_TABLE),0) AS FLShortPart
+            FROM MAIN_TABLE M
+            LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+            LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+            LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+            LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+            ORDER BY M.GROUPS DESC</sql><sql name="SQL 7">WITH RECURSIVE
+                MAIN_TABLE (GROUPS, TITLE) AS (
+                    SELECT 1, '20 и более'
+                    UNION
+                    SELECT GROUPS + 1,
+                        CASE GROUPS +1
+                            WHEN 2 THEN '16 - 20' 
+                            WHEN 3 THEN '11 - 15' 
+                            WHEN 4 THEN '6 - 10' 
+                            ELSE '0 - 5' END AS TITLE	
+                    FROM MAIN_TABLE LIMIT 5),
+                    
+                REPORT_DATA_TABLE (GROUPS, SUBJECT, PERIOD, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+                            WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+                            WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+                            WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+                            ELSE 5 END AS GROUPS,
+                        T.SUBJ,
+                        SROK,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    WHERE REPORT_ID = 86 AND CODE_VAL &lt;&gt; '000'),
+
+                UL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '3%'
+                    GROUP BY GROUPS
+                ),
+                
+                UL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'J' AND PERIOD LIKE '1%'
+                    GROUP BY GROUPS
+                ),
+                
+                FL_LONG_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '3%'
+                    GROUP BY GROUPS
+                ),
+                
+                FL_SHORT_TABLE (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE SUBJECT LIKE 'P' AND PERIOD LIKE '1%'
+                    GROUP BY GROUPS
+                )	
+            SELECT 
+                M.GROUPS AS id,
+                ROW_NUMBER () OVER (ORDER BY M.GROUPS DESC) AS Number,
+                M.TITLE AS Title,
+                IFNULL(ULL.TOTAL_LOAN/1000000,0) AS ULLongTerm,
+                IFNULL(ULS.TOTAL_LOAN/1000000,0) AS ULShortTerm,
+                IFNULL(FLL.TOTAL_LOAN/1000000,0) AS FLLongTerm,
+                IFNULL(FLS.TOTAL_LOAN/1000000,0) AS FLShortTerm,
+                IFNULL(ULL.TOTAL_LOAN*100/(SELECT SUM(TOTAL_LOAN) FROM UL_LONG_TABLE),0) AS ULLongPart,
+                IFNULL(ULS.TOTAL_LOAN*100/(SELECT SUM(TOTAL_LOAN) FROM UL_SHORT_TABLE),0) AS ULShortPart,
+                IFNULL(FLL.TOTAL_LOAN*100/(SELECT SUM(TOTAL_LOAN) FROM FL_LONG_TABLE),0) AS FLLongPart,
+                IFNULL(FLS.TOTAL_LOAN*100/(SELECT SUM(TOTAL_LOAN) FROM FL_SHORT_TABLE),0) AS FLShortPart
+            FROM MAIN_TABLE M
+            LEFT JOIN UL_LONG_TABLE ULL  ON ULL.GROUPS = M.GROUPS
+            LEFT JOIN UL_SHORT_TABLE ULS ON ULS.GROUPS = M.GROUPS
+            LEFT JOIN FL_LONG_TABLE FLL  ON FLL.GROUPS = M.GROUPS
+            LEFT JOIN FL_SHORT_TABLE FLS ON FLS.GROUPS = M.GROUPS
+            ORDER BY M.GROUPS DESC</sql><sql name="SQL 8">WITH RECURSIVE
+                MAIN_TABLE (GROUPS, TITLE) AS (
+                    SELECT 1, '20 и более'
+                    UNION
+                    SELECT GROUPS + 1,
+                        CASE GROUPS +1
+                            WHEN 2 THEN '16 - 20' 
+                            WHEN 3 THEN '11 - 15' 
+                            WHEN 4 THEN '6 - 10' 
+                            ELSE '0 - 5' END AS TITLE	
+                    FROM MAIN_TABLE LIMIT 5),
+                    
+                REPORT_DATA_TABLE (GROUPS, TERM, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        CASE WHEN CREDIT_PROCENT &gt; 20 THEN 1
+                            WHEN CREDIT_PROCENT &gt; 15 THEN 2 
+                            WHEN CREDIT_PROCENT &gt; 10 THEN 3 
+                            WHEN CREDIT_PROCENT &gt; 5 THEN 4 
+                            ELSE 5 END AS GROUPS,
+                        CASE WHEN DATE_POGASH_POSLE_PRODL IS NULL 
+                            THEN ROUND((JULIANDAY(DATE_POGASH) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                            ELSE ROUND((JULIANDAY(DATE_POGASH_POSLE_PRODL) - JULIANDAY(DATE_DOGOVOR))/365,1)
+                            END	AS TERM,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    WHERE T.SUBJ = 'J' AND REPORT_ID = 86 AND CODE_VAL = '000'),
+
+                TERMLESS_2 (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE TERM &lt;= 2 OR TERM IS NULL
+                    GROUP BY GROUPS
+                ),
+                
+                TERMLESS_5 (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE TERM &lt;= 5 AND TERM &gt; 2
+                    GROUP BY GROUPS
+                ),
+                
+                TERMLESS_7 (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE TERM &lt;= 7 AND TERM &gt; 5
+                    GROUP BY GROUPS
+                ),
+                
+                TERMLESS_10 (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE TERM &lt;= 10 AND TERM &gt; 7
+                    GROUP BY GROUPS
+                ),
+                
+                TERMMORE_10 (GROUPS, TOTAL_LOAN) AS (
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST) 
+                    FROM REPORT_DATA_TABLE D
+                    WHERE TERM &gt; 10
+                    GROUP BY GROUPS
+                )
+
+            SELECT 
+				M.GROUPS AS id,
+                M.TITLE AS Title ,
+                IFNULL(T2.TOTAL_LOAN/1000000,0) AS Term1,
+                IFNULL(T5.TOTAL_LOAN/1000000,0) AS Term2,
+                IFNULL(T7.TOTAL_LOAN/1000000,0) AS Term3,
+                IFNULL(T10.TOTAL_LOAN/1000000,0) AS Term4,
+                IFNULL(T11.TOTAL_LOAN/1000000,0) AS Term5
+            FROM MAIN_TABLE M
+            LEFT JOIN TERMLESS_2 T2  ON T2.GROUPS = M.GROUPS
+            LEFT JOIN TERMLESS_5 T5  ON T5.GROUPS = M.GROUPS
+            LEFT JOIN TERMLESS_7 T7  ON T7.GROUPS = M.GROUPS
+            LEFT JOIN TERMLESS_10 T10  ON T10.GROUPS = M.GROUPS
+            LEFT JOIN TERMMORE_10 T11  ON T11.GROUPS = M.GROUPS
+            ORDER BY M.GROUPS DESC</sql><sql name="SQL 1">WITH NPL_VIEW (REPORT_MONTH, SUMMA_NPL) AS (
+	SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
+		SELECT 
+			L.REPORT_MONTH,
+			CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
+			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+			SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+		WHERE L.REPORT_MONTH in (4, 3)
+		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+		HAVING DAY_COUNT &gt; 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
+	)
+	GROUP BY REPORT_MONTH
+),
+
+TOXIC_VIEW (REPORT_MONTH, SUMMA_TOXIC) AS (
+	SELECT REPORT_MONTH, SUM(LOAN_BALANCE) FROM (
+		SELECT
+			L.REPORT_MONTH,
+			CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END AS UNIQUE_CODE,
+			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+			SUM(R.VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+		WHERE L.REPORT_MONTH in (4, 3)
+		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+		HAVING SUM(R.OSTATOK_PERESM) IS NOT NULL AND (DAY_COUNT &lt; 90 OR DAY_COUNT IS NULL)  
+		AND SUM(R.OSTATOK_VNEB_PROSR) IS NULL AND SUM(R.OSTATOK_SUDEB) IS NULL
+	)
+	GROUP BY REPORT_MONTH
+)
+SELECT RD.id, 
+L.REPORT_MONTH, 
+SUM(VSEGO_ZADOLJENNOST)                 AS CREDIT,
+N.SUMMA_NPL                             AS NPL, 
+N.SUMMA_NPL / SUM(VSEGO_ZADOLJENNOST)   AS NPL_WEIGHT,
+T.SUMMA_TOXIC                           AS TOXIC,
+T.SUMMA_TOXIC / SUM(VSEGO_ZADOLJENNOST) AS TOXIC_WEIGHT,
+T.SUMMA_TOXIC + N.SUMMA_NPL             AS TOXIC_NPL,
+SUM(OSTATOK_REZERV)                     AS RESERVE,
+SUM(OSTATOK_REZERV) / (T.SUMMA_TOXIC + N.SUMMA_NPL) AS RESERVE_COATING,
+SUM(OSTATOK_PROSR)                      AS OVERDUE,
+SUM(OSTATOK_PROSR) / SUM(VSEGO_ZADOLJENNOST) AS OVERDUE_WEIGHT
+FROM CREDITS_REPORTDATA RD
+LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = RD.REPORT_ID
+LEFT JOIN NPL_VIEW N ON N.REPORT_MONTH = L.REPORT_MONTH
+LEFT JOIN TOXIC_VIEW T ON T.REPORT_MONTH = L.REPORT_MONTH
+WHERE L.REPORT_MONTH in (4, 3,)
+GROUP BY L.REPORT_MONTH</sql><sql name="SQL 2">SELECT REPORT_MONTH, SUM(LOAN_BALANCE) AS SUMMA_NPL FROM (
+	SELECT 
+			L.REPORT_MONTH,
+			CASE T.SUBJ WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8) ELSE SUBSTR(INN_PASSPORT,11,9) END	AS UNIQUE_CODE,
+			JULIANDAY(DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month')) - JULIANDAY(MIN(R.DATE_OBRAZ_PROS)) AS DAY_COUNT,
+			SUM(VSEGO_ZADOLJENNOST) AS LOAN_BALANCE
+		FROM CREDITS_REPORTDATA R
+		LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+		LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+		LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+		WHERE L.REPORT_YEAR = 2020
+		GROUP BY L.REPORT_MONTH, UNIQUE_CODE
+		HAVING DAY_COUNT &gt; 90 OR SUM(OSTATOK_SUDEB) IS NOT NULL OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL)
+GROUP BY REPORT_MONTH</sql><current_tab id="2"/></tab_sql></sqlb_project>

@@ -3,10 +3,10 @@
     <h6 class="text-uppercase mt-0 mb-10">Кредитный портфель</h6>
 
     <div class="email-menu-list mt-3">
-        <a href="{% url 'general-indicators' %}" class="{{ indicators_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>Общие показатели</a>
-        <a href="{% url 'npl-list' %}" class="{{ npls_page }} "><i class="mdi mdi-circle font-13 text-info mr-2"></i>NPL клиенты</a>
-        <a href="{% url 'toxic-list' %}" class="{{ toxics_page }}"><i class="mdi mdi-circle font-13 text-warning mr-2"></i>Токсичные кредиты</a>
-        <a href="{% url 'overdue-list' %}" class="{{ overdues_page }}"><i class="mdi mdi-circle font-13 text-primary mr-2"></i>Просроченные кредиты</a>
+        <a href="{% url 'general-indicators' %}" class="{{ indicators_page }}"><i class="mdi mdi-circle font-13 text-success mr-2"></i>Общие показатели</a>
+        <a href="{% url 'npl-list' %}" class="{{ npls_page }} "><i class="mdi mdi-circle font-13 text-success mr-2"></i>NPL клиенты</a>
+        <a href="{% url 'toxic-list' %}" class="{{ toxics_page }}"><i class="mdi mdi-circle font-13 text-success mr-2"></i>Токсичные кредиты</a>
+        <a href="{% url 'overdue-list' %}" class="{{ overdues_page }}"><i class="mdi mdi-circle font-13 text-success mr-2"></i>Просроченные кредиты</a>
     </div>
     
  
@@ -18,20 +18,14 @@
             <a href="{% url 'break-by-segments' %}" class="{{ bysegments_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по сегментам</a>
             <a href="{% url 'break-by-currency' %}" class="{{ bycurrency_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по валютам</a>
             <a href="{% url 'break-by-branches' %}" class="{{ bybranches_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по филиалам</a>
-            <a href="{% url 'break-by-percentage' %}" class="{{ bypercentage_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по процентной ставке</a>
-            <a href="{% url 'break-by-average-weight' %}" class="{{ byaverageweight_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по средневзвешенной процентной ставке</a>
+            <a href="{% url 'break-by-percentage-national' %}" class="{{ bypercentage_national_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по процентной ставке</a>
+            <a href="{% url 'break-by-percentage-foreign' %}" class="{{ bypercentage_foreign_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по процентной ставке</a>
+            <a href="{% url 'break-by-percentage-national-ul' %}" class="{{ bypercentage_national_ul_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по процентной ставке</a>
+            <a href="{% url 'break-by-percentage-foreign-ul' %}" class="{{ bypercentage_foreign_ul_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по процентной ставке</a>
+            <a href="{% url 'break-by-average-weight-ul' %}" class="{{ byaverageweight_ul_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по средневзвешенной процентной ставке</a>
+            <a href="{% url 'break-by-average-weight-fl' %}" class="{{ byaverageweight_fl_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>по средневзвешенной процентной ставке</a>
             <a href="{% url 'break-by-retail-product' %}" class="{{ byretailproduct_page }}"><i class="mdi mdi-circle font-13 text-info mr-2"></i>розничного бизнеса</a>
         </div>
-    </div>
-    
-   
-    <div class="mt-5">
-        <h4><span class="badge badge-pill p-1 px-2 badge-secondary-lighten">FREE</span></h4>
-        <h6 class="text-uppercase mt-3">Storage</h6>
-        <div class="progress my-2 progress-sm">
-            <div class="progress-bar progress-lg bg-success" role="progressbar" style="width: 46%" aria-valuenow="46" aria-valuemin="0" aria-valuemax="100"></div>
-        </div>
-        <p class="text-muted font-13 mb-0">7.02 GB (46%) of 15 GB used</p>
     </div>
 
 </div>
