@@ -185,3 +185,16 @@ class ByPercentageUL(models.Model):
 
     class Meta:
         managed  = False
+
+class ByRetailProduct(models.Model):
+    Number      = models.CharField(max_length=255, verbose_name="№")
+    Title       = models.CharField(max_length=255, verbose_name="Продукт")
+    PorBalans   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Кредитный портфель")
+    PorPercent  = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля, %")
+    PrsBalans   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Просрочка ОД")
+    NplBalans   = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="NPL")
+    NplWeight   = models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Удельный вес")
+    NachBalans  = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Просрочка по % (16377)")
+
+    class Meta:
+        managed  = False

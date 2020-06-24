@@ -14,7 +14,8 @@ class NplClientsTable(tables.Table):
         exclude = ('id',)
 
 class ToxicCreditsTable(tables.Table):
-    Balans = tables.Column(verbose_name="Остаток р/с 16377", attrs=attr_right_text)
+    Balans = tables.Column(verbose_name="Остаток р/с 16377", attrs=attr_right_text, 
+        footer=lambda table: sum(x.Balans for x in table.data))
     class Meta:
         model = ToxicCredits
         orderable = False
@@ -31,20 +32,6 @@ class OverdueCreditsTable(tables.Table):
         attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
         exclude = ('id',)
         
-        
-
-class ReportDataTable(tables.Table):
-    class Meta:
-        model = ReportData
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
-        orderable = False
-        fields = (
-            'UNIQUE_CODE',
-            'BORROWER', 
-            'BRANCH_NAME',
-            'LOAN_BALANCE',
-            )
 class OverallInfoTable(tables.Table):
     name        = tables.Column(verbose_name="Показатели")
     old_value   = tables.Column(attrs=attr_right_text, verbose_name="Предыдущий  месяц")
@@ -128,7 +115,7 @@ class ByPercentageULTable(tables.Table):
         exclude = ('id',)
 
 class ByAverageULTable(tables.Table):
-    TITLE       = tables.Column(verbose_name = "Срок", footer="Итого:")
+    TITLE       = tables.Column(verbose_name = "Срок")
     UZS_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "UZS")
     USD_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "USD")
     EUR_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "EUR")
@@ -156,6 +143,27 @@ class ByAverageFLTable(tables.Table):
             "thead": {"class": "thead-dark text-truncate"}, 
             "tfoot": {"class": "bg-light"}}
         orderable = False
+
+class ByRetailProductTable(tables.Table):
+    Title = tables.Column(verbose_name="Продукт", footer="Итого:")
+    PorBalans  = tables.Column(verbose_name="Кредитный портфель", attrs=attr_right_text, footer=lambda table: sum(x.PorBalans for x in table.data))
+    PorPercent = tables.Column(verbose_name="Доля, %", attrs=attr_right_text, footer="100%")
+    PrsBalans  = tables.Column(verbose_name="Просрочка ОД", attrs=attr_right_text, footer=lambda table: sum(x.PrsBalans for x in table.data))
+    NplBalans  = tables.Column(verbose_name="NPL", attrs=attr_right_text, footer=lambda table: sum(x.NplBalans for x in table.data))
+    NplWeight  = tables.Column(verbose_name="Удельный вес", attrs=attr_right_text, 
+        footer=lambda table: '{:.1%}'.format(sum(x.NplBalans for x in table.data)/sum(x.PorBalans for x in table.data))
+    )
+    NachBalans  = tables.Column(verbose_name="Просрочка по % (16377)", attrs=attr_right_text, footer=lambda table: sum(x.NachBalans for x in table.data))
+    class Meta:
+        model = ByRetailProduct
+        template_name = "django_tables2/bootstrap.html"
+        attrs = {
+            "class": "table table-centered table-hover mb-0", 
+            "thead": {"class": "thead-dark text-truncate"}, 
+            "tfoot": {"class": "bg-light"}}
+        orderable = False
+        exclude = ('id',)
+
 
 class ContractListTable(tables.Table):
     class Meta:

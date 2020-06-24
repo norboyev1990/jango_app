@@ -963,7 +963,80 @@ class Query():
 
     def named_query_byretailproduct():
         return '''
-                '''
+            WITH 	
+                REPORT_DATA_TABLE (ID,
+                    GROUPS, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, OSTATOK_PROSR,OSTATOK_NACH_PRCNT,
+                    OSTATOK_VNEB_PROSR, OSTATOK_PERESM, OSTATOK_REZERV, VSEGO_ZADOLJENNOST) AS (
+                    SELECT R.ID,
+                        VID_KREDITOVANIYA,
+                        CASE SUBJ WHEN 'J' 
+                                THEN SUBSTR(CREDIT_SCHET,10,8)
+                                ELSE SUBSTR(INN_PASSPORT,11,9) 
+                                END	AS UNIQUE_CODE,
+                        JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS),
+                        OSTATOK_SUDEB, 
+                        OSTATOK_PROSR,
+                        OSTATOK_NACH_PRCNT,
+                        OSTATOK_VNEB_PROSR,
+                        OSTATOK_PERESM,
+                        OSTATOK_REZERV,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+                    LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                        LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                        WHERE REPORT_ID = %s 
+                            AND VID_KREDITOVANIYA IN (
+                                '30-Потребительский кредит', 
+                                '32-Микрозаем', 
+                                '34-Автокредит', 
+                                '54-Овердрафт по пластиковым карточкам физических лиц', 
+                                '59-Образовательный кредит'
+                            )
+                ),
+                    
+                PORTFOLIO_TABLE (ID, GROUPS, BALANS, TOTALS, PROSR, NACHPROSR) AS (
+                    SELECT ID, GROUPS, SUM(VSEGO_ZADOLJENNOST),
+                        (SELECT SUM(VSEGO_ZADOLJENNOST) FROM CREDITS_REPORTDATA WHERE REPORT_ID=%s 
+                        AND VID_KREDITOVANIYA IN (
+                                '30-Потребительский кредит', 
+                                '32-Микрозаем', 
+                                '34-Автокредит', 
+                                '54-Овердрафт по пластиковым карточкам физических лиц', 
+                                '59-Образовательный кредит'
+                            )
+                        ) AS TOTALS,
+                        SUM(OSTATOK_PROSR),
+                        SUM(OSTATOK_NACH_PRCNT)
+                    FROM REPORT_DATA_TABLE
+                    GROUP BY GROUPS
+                ),
+
+                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                NPL_TABLE (GROUPS, BALANS) AS(
+                    SELECT GROUPS, SUM(VSEGO_ZADOLJENNOST)
+                    FROM NPL_UNIQUE_TABLE N
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
+                    GROUP BY GROUPS
+                )
+            SELECT P.ID as id,
+                ROW_NUMBER () OVER (ORDER BY P.GROUPS) AS Number,
+                P.GROUPS AS Title,
+                IFNULL(P.BALANS/1000000,0) AS PorBalans,
+                IFNULL(P.BALANS*100/P.TOTALS,0) AS PorPercent,
+                IFNULL(P.PROSR/1000000,0) AS PrsBalans,
+                IFNULL(N.BALANS/1000000,0) AS NplBalans,
+                IFNULL(N.BALANS*100/P.BALANS,0) AS NplWeight,
+                IFNULL(P.NACHPROSR/1000000,0) AS NachBalans
+            FROM PORTFOLIO_TABLE P
+            LEFT JOIN NPL_TABLE N  ON N.GROUPS = P.GROUPS
+            ORDER BY P.GROUPS
+        '''
 
     def named_query_contracts():
         return '''SELECT 

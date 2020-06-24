@@ -12,6 +12,7 @@ from .functions import CursorByName
 from .queries import Query
 from .models import *
 from .tables import *
+import json
 # Create your views here.
 
 def setReviewMonthInSession(request):
@@ -35,6 +36,23 @@ def index(request):
     for row in CursorByName(cursor):
         data.append(row)
 
+    gdpData = {
+        'UZB363': 830510,
+        'UZB358': 1502964,
+        'UZB355': 877644,
+        'UZB354': 1031264,
+        'UZB357': 579577,
+        'UZB356': 851082,
+        'UZB364': 887582,
+        'UZB365': 682262,
+        'UZB372': 824355,
+        'UZB371': 803318,
+        'UZB361': 716675,
+        'UZB370': 883869,
+        
+        'UZB362': 684108
+    },
+
     statistics = {
         'portfolio_value'   : int(data[2]['CREDIT']/1000000),
         'portfolio_percent' : '{:.1%}'.format((data[2]['CREDIT'] - data[1]['CREDIT']) / data[2]['CREDIT']),
@@ -54,7 +72,8 @@ def index(request):
         "page_title": "NPL кредиты",
         "statistics": statistics,
         "data_month": request.session['data_month'],
-        "npls_page": "active"
+        "npls_page": "active",
+        "gdpData": json.dumps(gdpData)
     }
 
     return render(request, 'credits/index.html', context)
@@ -336,7 +355,19 @@ def byaverageweight_fl(request):
 
 def byretailproduct(request):
     setReviewMonthInSession(request)
-    return render(request, 'credits/index.html')
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+    data = ByRetailProduct.objects.raw(Query.named_query_byretailproduct(), [report.id, report.id])
+    table = ByRetailProductTable(data)
+    context = {
+        "page_title" : "По продуктам розничного бизнеса",
+        "data_table" : table,
+        "data_month": sMonth.strftime('%Y-%m'),
+        "byretailproduct_page" : "font-weight-bold",
+
+    }
+
+    return render(request, 'credits/view.html', context)
 
 def contracts(request):
     setReviewMonthInSession(request)
@@ -459,14 +490,14 @@ def test_export(request):
     listCreditPortfolio = [
             {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
             {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT'],     "flag": True},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT']},
             {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT'],   "flag": True},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT']},
             {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
             {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
-            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING'],"flag": True},
+            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING']},
             {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT'], "flag": True},
+            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT']},
         ]
             
     for item in listCreditPortfolio:

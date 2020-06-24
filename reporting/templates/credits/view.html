@@ -32,7 +32,16 @@
                     {% include "credits/navbar.html" %}
                     
                     <div class="page-aside-right" style="margin: -1.5rem 0 -1.5rem 300px;">
-                        <h4 class="header-title mb-3">{{ page_title }}</h4>
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <h4 class="header-title" style="margin-top: 10px;">{{ page_title }}</h4>                    
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="text-lg-right">
+                                    <a href="{% url 'export' %}" class="btn btn-light mb-2">Export</a>
+                                </div>
+                            </div><!-- end col-->
+                        </div>
                         {% render_table data_table %}
                     </div>
                 </div> <!-- end card-body-->

@@ -4,6 +4,11 @@
     function e() {
         this.$body = i("body"), this.charts = []
     }
+
+    function numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
     e.prototype.initCharts = function() {
         window.Apex = {
             chart: {
@@ -88,12 +93,26 @@
         };
         
         for (var r = [], s = 10; 1 <= s; s--) r.push(s + " min ago");
-        
+        var names = ["Andijon",
+           "Samarkand",
+            "Khorezm",
+            "Bukhoro",
+            "Navoi",
+            "Karakalpakstan",
+            "Ferghana",
+            "Namangan",
+            "Tashkent",
+            "Sirdaryo",
+            "Kashkadarya",
+            "Jizzakh",
+            "Surkhandarya"
+        ]
+        var gdpData = JSON.parse(document.getElementById("geo_data").value)[0];
         a = ["#727cf5", "#0acf97", "#fa5c7c", "#ffbc00"];
         (n = i("#country-chart").data("colors")) && (a = n.split(","));
         o = {
             chart: {
-                height: 320,
+                height: 400,
                 type: "bar"
             },
             plotOptions: {
@@ -107,16 +126,16 @@
             },
             series: [{
                 name: "Sessions",
-                data: [90, 75, 60, 50, 45, 36, 28, 20, 15, 12]
+                data: Object.values(gdpData)
             }],
             xaxis: {
-                categories: ["India", "China", "United States", "Japan", "France", "Italy", "Netherlands", "United Kingdom", "Canada", "South Korea"],
+                categories: names,
                 axisBorder: {
                     show: !1
                 },
                 labels: {
                     formatter: function(e) {
-                        return e + "%"
+                        return numberWithCommas(e)
                     }
                 }
             },
@@ -124,11 +143,15 @@
                 strokeDashArray: [5]
             }
         };
-        new ApexCharts(document.querySelector("#country-chart"), o).render();
+        new ApexCharts(document.querySelector("#uzb-chart"), o).render();
         var n;
     }, e.prototype.initMaps = function() {
-        0 < i("#world-map-markers").length && i("#world-map-markers").vectorMap({
-            map: "world_mill_en",
+
+        var gdpData = JSON.parse(document.getElementById("geo_data").value)[0];
+        
+        console.log(gdpData[0])
+        0 < i("#uzb-map-markers").length && i("#uzb-map-markers").vectorMap({
+            map: "uzbekistan_mill_en",
             normalizeFunction: "polynomial",
             hoverOpacity: .7,
             hoverColor: !1,
@@ -139,20 +162,15 @@
             },
             series: {
                 regions: [{
-                    values: {
-                        KR: "#e6ebff",
-                        CA: "#b3c3ff",
-                        GB: "#809bfe",
-                        NL: "#4d73fe",
-                        IT: "#1b4cfe",
-                        FR: "#727cf5",
-                        JP: "#e7fef7",
-                        US: "#e7e9fd",
-                        CN: "#8890f7",
-                        IN: "#727cf5"
-                    },
-                    attribute: "fill"
+                    values: gdpData,
+                    scale: ['#b3c3ff', '#727cf5'],
+                    normalizeFunction: 'polynomial',
+                    
                 }]
+            },
+            onRegionLabelShow: function (e, el, code) {
+                if (typeof gdpData[code] != 'undefined')
+                 el.html(el.html() + ': ' + numberWithCommas(gdpData[code]) + ' mln. sum');
             },
             backgroundColor: "transparent",
             zoomOnScroll: !1
