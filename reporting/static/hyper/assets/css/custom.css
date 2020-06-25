@@ -1,0 +1,13 @@
+.cr-menu .email-menu-list a {
+    
+}
+
+.cr-menu .labels-list a {
+    padding: 3px 5px;
+}
+
+.right-tools{
+    display: flex;
+    flex-direction: row;
+    float: right;
+}

@@ -1,8 +1,8 @@
-<div class="page-aside-left" style="width: 290px;">
+<div class="page-aside-left cr-menu" style="width: 290px;">
 
-    <h6 class="text-uppercase mt-0 mb-10">Кредитный портфель</h6>
+    <h6 class="text-uppercase mt-0 ml-lg-n2">Кредитный портфель</h6>
 
-    <div class="email-menu-list labels-list mt-3">
+    <div class="email-menu-list labels-list mt-2">
         <a href="{% url 'general-indicators' %}" class="{{ indicators_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>Общие показатели</a>
         <a href="{% url 'npl-list' %}" class="{{ npls_page }} "><i class="mdi mdi-circle font-10 text-danger mr-2"></i>NPL клиенты</a>
         <a href="{% url 'toxic-list' %}" class="{{ toxics_page }}"><i class="mdi mdi-circle font-10 text-danger mr-2"></i>Токсичные кредиты</a>
@@ -10,25 +10,24 @@
     </div>
     
  
-    <div class="mt-4">
-        <h6 class="text-uppercase">В разбивке ...</h6>
-        <div class="email-menu-list labels-list cr-menu mt-2">
-            <a href="{% url 'break-by-terms' %}" class="{{ byterms_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по срокам</a>
-            <a href="{% url 'break-by-subjects' %}" class="{{ bysubjects_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по субъектам</a>
-            <a href="{% url 'break-by-segments' %}" class="{{ bysegments_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по сегментам</a>
-            <a href="{% url 'break-by-currency' %}" class="{{ bycurrency_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по валютам</a>
-            <a href="{% url 'break-by-branches' %}" class="{{ bybranches_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по филиалам</a>
-            <a href="{% url 'break-by-retail-product' %}" class="{{ byretailproduct_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>по прод. розничного бизнеса</a>
-            <label class="mt-1 mb-1" style="font-size:15px;font-weight: 400;color: #a2b7ca;">по процентной ставке </label>
-            <a href="{% url 'break-by-percentage-national' %}" class="{{ bypercentage_national_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>в национальной валюте</a>
-            <a href="{% url 'break-by-percentage-foreign' %}" class="{{ bypercentage_foreign_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>в иностранной валюте</a>
-            <a href="{% url 'break-by-percentage-national-ul' %}" class="{{ bypercentage_national_ul_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>в национальной валюте по ЮЛ </a>
-            <a href="{% url 'break-by-percentage-foreign-ul' %}" class="{{ bypercentage_foreign_ul_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i>в иностранной валюте по ЮЛ </a>
-            <label class="mt-1 mb-1" style="font-size:15px;font-weight: 400;color: #a2b7ca;">по сред. процентной ставке </label>
-            <a href="{% url 'break-by-average-weight-ul' %}" class="{{ byaverageweight_ul_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i> юридические лица</a>
-            <a href="{% url 'break-by-average-weight-fl' %}" class="{{ byaverageweight_fl_page }}"><i class="mdi mdi-circle font-10 text-muted mr-2"></i> физические лица</a>
-            
-        </div>
+    <h6 class="text-uppercase mt-4 ml-lg-n2">В разбивке ...</h6>
+        
+    <div class="email-menu-list labels-list mt-2">
+        <a href="{% url 'break-by-terms' %}" class="{{ byterms_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по срокам</a>
+        <a href="{% url 'break-by-subjects' %}" class="{{ bysubjects_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по субъектам</a>
+        <a href="{% url 'break-by-segments' %}" class="{{ bysegments_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по сегментам</a>
+        <a href="{% url 'break-by-currency' %}" class="{{ bycurrency_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по валютам</a>
+        <a href="{% url 'break-by-branches' %}" class="{{ bybranches_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по филиалам</a>
+        <a href="{% url 'break-by-retail-product' %}" class="{{ byretailproduct_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>по прод. розничного бизнеса</a>
+        <label class="mt-1 mb-1" style="font-size:15px;font-weight: 400;color: #668a9c;">по процентной ставке </label>
+        <a href="{% url 'break-by-percentage-national' %}" class="{{ bypercentage_national_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>в национальной валюте</a>
+        <a href="{% url 'break-by-percentage-foreign' %}" class="{{ bypercentage_foreign_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>в иностранной валюте</a>
+        <a href="{% url 'break-by-percentage-national-ul' %}" class="{{ bypercentage_national_ul_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>в национальной валюте по ЮЛ </a>
+        <a href="{% url 'break-by-percentage-foreign-ul' %}" class="{{ bypercentage_foreign_ul_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i>в иностранной валюте по ЮЛ </a>
+        <label class="mt-1 mb-1" style="font-size:15px;font-weight: 400;color: #668a9c;">по сред. процентной ставке </label>
+        <a href="{% url 'break-by-average-weight-ul' %}" class="{{ byaverageweight_ul_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i> юридические лица</a>
+        <a href="{% url 'break-by-average-weight-fl' %}" class="{{ byaverageweight_fl_page }}"><i class="mdi mdi-circle font-10 text-primary mr-2"></i> физические лица</a>
+        
     </div>
 
 </div>

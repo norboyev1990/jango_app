@@ -13,6 +13,9 @@ from .queries import Query
 from .models import *
 from .tables import *
 import json
+from django_tables2.export.views import ExportMixin
+from django_tables2.export.export import TableExport
+from django_pandas.io import read_frame
 # Create your views here.
 
 def setReviewMonthInSession(request):
@@ -21,7 +24,7 @@ def setReviewMonthInSession(request):
         return HttpResponseRedirect(request.path_info)
     
     if 'data_month' not in request.session:
-        request.session['data_month'] = '2020-04'
+        request.session['data_month'] = '2020-04'      
 
 def index(request):
     setReviewMonthInSession(request)
@@ -84,8 +87,14 @@ def npls(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     
-    table = NplClientsTable(NplClients.objects.raw(Query.named_query_npls(), [report.id]))
-    table.paginate(page=request.GET.get("page", 1), per_page=10)            
+    top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
+    table = NplClientsTable(NplClients.objects.raw(Query.named_query_npls(), [report.id])[:top])
+    table.paginate(page=request.GET.get("page", 1), per_page=10) 
+    
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("npls_table.{}".format(export_format))  
 
     context = {
         "page_title": "NPL кредиты",
@@ -102,8 +111,14 @@ def toxics(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    table = ToxicCreditsTable(ToxicCredits.objects.raw(Query.named_query_toxics(), [report.id]))
+    top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
+    table = ToxicCreditsTable(ToxicCredits.objects.raw(Query.named_query_toxics(), [report.id])[:top])
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
+    
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "Токсичные кредиты"})
+        return exporter.response("toxics_table.{}".format(export_format))  
 
     context = {
         "page_title": "Токсичные кредиты",
@@ -119,8 +134,14 @@ def overdues(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     
-    table = OverdueCreditsTable(OverdueCredits.objects.raw(Query.named_query_overdues(), [report.id]))
+    top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
+    table = OverdueCreditsTable(OverdueCredits.objects.raw(Query.named_query_overdues(), [report.id])[:top])
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
+    
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
 
     context = {
         "page_title": "Просроченные кредиты",
@@ -165,6 +186,11 @@ def indicators(request):
     
     table = OverallInfoTable(listCreditPortfolio)
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
+    
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))  
 
     context = {
         "page_title": "Общие показатели",
@@ -183,6 +209,11 @@ def byterms(request):
     data = ByTerms.objects.raw(Query.named_query_byterms(), [report.id, report.id])
     table = ByTermsTable(data)
 
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по срокам",
         "data_table": table,
@@ -199,6 +230,11 @@ def bysubjects(request):
 
     data = ByTerms.objects.raw(Query.named_query_bysubjects(), [report.id, report.id])
     table = ByTermsTable(data)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
 
     context = {
         "page_title": "В разбивке по субъектам",
@@ -217,6 +253,11 @@ def bysegments(request):
     data = ByTerms.objects.raw(Query.named_query_bysegments(), [report.id, report.id])
     table = ByTermsTable(data)
 
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по сегментам",
         "data_table": table,
@@ -232,6 +273,12 @@ def bycurrency(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     data = ByTerms.objects.raw(Query.named_query_bycurrency(), [report.id, report.id])
     table = ByTermsTable(data)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по валютам",
         "data_table": table,
@@ -246,6 +293,12 @@ def bybranches(request):
     data = ByTerms.objects.raw(Query.named_query_bybranches(), [report.id, report.id])
     table = ByTermsTable(data)
     table.paginate(page=request.GET.get("page", 1), per_page=10)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по филиалам",
         "data_table": table,
@@ -259,6 +312,11 @@ def bypercentage_national(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
     table = ByPercentageTable(ByPercentage.objects.raw(Query.named_query_bypercentage_national(), [report.id]))
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
     
     context = {
         "page_title": "В разбивке по процентной ставке",
@@ -273,6 +331,11 @@ def bypercentage_foreign(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
     table = ByPercentageTable(ByPercentage.objects.raw(Query.named_query_bypercentage_foreign(), [report.id]))
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
     
     context = {
         "page_title": "В разбивке по процентной ставке",
@@ -286,6 +349,12 @@ def bypercentage_national_ul(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     table = ByPercentageULTable(ByPercentageUL.objects.raw(Query.named_query_bypercentage_national_ul(), [report.id]))
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по процентной ставке",
         "data_table": table,
@@ -298,6 +367,12 @@ def bypercentage_foreign_ul(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     table = ByPercentageULTable(ByPercentageUL.objects.raw(Query.named_query_bypercentage_foreign_ul(), [report.id]))
+    
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по процентной ставке",
         "data_table": table,
@@ -322,6 +397,12 @@ def byaverageweight_ul(request):
         item['EUR_AVERAGE'] = '{:.2f}'.format(item['EUR_AVERAGE'])
         item['JPY_AVERAGE'] = '{:.2f}'.format(item['JPY_AVERAGE'])
     table = ByAverageULTable(listData)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title" : "В разбивке по средневзвешенной процентной ставке",
         "data_table" : table,
@@ -344,6 +425,11 @@ def byaverageweight_fl(request):
     total_loan   = sum(c['LOAN'] for c in listData)
     table = ByAverageFLTable(listData)
 
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title": "В разбивке по средневзвешенной процентной ставке",
         "data_table": table,
@@ -359,6 +445,12 @@ def byretailproduct(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     data = ByRetailProduct.objects.raw(Query.named_query_byretailproduct(), [report.id, report.id])
     table = ByRetailProductTable(data)
+
+    export_format = request.GET.get("_export", None)
+    if TableExport.is_valid_format(export_format):
+        exporter = TableExport(export_format, table,dataset_kwargs={"title": "NPL клиенты"})
+        return exporter.response("table.{}".format(export_format))
+
     context = {
         "page_title" : "По продуктам розничного бизнеса",
         "data_table" : table,
@@ -368,6 +460,27 @@ def byretailproduct(request):
     }
 
     return render(request, 'credits/view.html', context)
+
+def export_all_tables(request):
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+    cursor = connection.cursor()
+    
+    cursor.execute(Query.named_query_npls(), [report.id])
+    data = []
+    for row in CursorByName(cursor):
+        data.append(row)
+    
+    df = pd.DataFrame(data[1:])
+    with BytesIO() as b:
+        # Use the StringIO object as the filehandle.
+        writer = pd.ExcelWriter(b, engine='xlsxwriter')
+        df.to_excel(writer, sheet_name='Sheet1')
+        writer.save()
+        writer.close()
+        response = HttpResponse(b.getvalue(), content_type='application/vnd.ms-excel')
+        response["Content-Disposition"] = 'attachment; filename="Indicators.xlsx"'
+        return response
 
 def contracts(request):
     setReviewMonthInSession(request)

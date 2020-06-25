@@ -16,27 +16,12 @@
         <div class="col-12">
             <div class="page-title-box">
                 <div class="page-title-right">
-                    <form class="form-inline">
-                        <div class="form-group">
-                            <div class="input-group">
-                                <input type="text" class="form-control form-control-light"
-                                    id="dash-daterange">
-                                <div class="input-group-append">
-                                    <span class="input-group-text bg-primary border-primary text-white">
-                                        <i class="mdi mdi-calendar-range font-13"></i>
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <a href="javascript: void(0);" class="btn btn-primary ml-2">
-                            <i class="mdi mdi-autorenew"></i>
-                        </a>
-                        <a href="javascript: void(0);" class="btn btn-primary ml-1">
-                            <i class="mdi mdi-filter-variant"></i>
-                        </a>
+                    <form id="formPreviewMonth" class="form-inline" action="{{ request.get_full_path }}" method="POST">
+                        {% csrf_token %} 
+                        <input name="data_month" onchange="myFunction()" type="month" class="form-control form-control-light" value="{{ data_month }}">
                     </form>
                 </div>
-                <h4 class="page-title">Dashboard</h4>
+                <h4 class="page-title">Главная</h4>
             </div>
         </div>
     </div>
@@ -209,9 +194,10 @@
 {% block myscripts %}
 <script type="text/javascript" src="{% static 'hyper/assets/js/pages/demo.dashboard-analytics.js' %}"></script>
 <script>
-    $(document).ready(function(){
-        
-    })
+    function myFunction() {
+    var x = document.getElementById("formPreviewMonth");
+    x.submit()
+}
 </script>
 
 {% endblock %}

@@ -2,6 +2,7 @@
 {% load static %}
 {% load humanize %}
 {% load render_table from django_tables2 %}
+{% load querystring from django_tables2 %}
 
 {% block page_container %}
 <div class="container-fluid">
@@ -11,11 +12,12 @@
         <div class="col-12">
             <div class="page-title-box">
                 <div class="page-title-right">
-                    <form class="form-inline" action="{{ request.get_full_path }}" method="POST">
+                    <form id="formPreviewMonth" class="form-inline" action="{{ request.get_full_path }}" method="POST">
                         {% csrf_token %} 
-                        <input name="data_month" type="month" class="form-control form-control-light" value="{{ data_month }}">
-                        <button class="btn btn-primary ml-2"><i class="mdi mdi-autorenew"></i></button> 
-                        <button class="btn btn-primary ml-1"><i class="mdi mdi-filter-variant"></i></button> 
+                        <input name="data_month" onchange="myFunction()" type="month" class="form-control form-control-light" value="{{ data_month }}">
+                        <a href="{% url 'export-all-tables' %}" class="btn btn-info ml-2">
+                            <i class="mdi mdi-download"></i> Download all
+                        </a>
                     </form>
                 </div>
                 <h4 class="page-title text-uppercase">Кредитный портфель</h4>
@@ -33,13 +35,31 @@
                     
                     <div class="page-aside-right" style="margin: -1.5rem 0 -1.5rem 300px;">
                         <div class="row">
-                            <div class="col-lg-8">
+                            <div class="col-lg-7">
                                 <h4 class="header-title" style="margin-top: 10px;">{{ page_title }}</h4>                    
                             </div>
-                            <div class="col-lg-4">
-                                <div class="text-lg-right">
-                                    <a href="{% url 'export' %}" class="btn btn-light mb-2">Export</a>
+                            <div class="col-lg-5">
+                                <div class="right-tools">
+                                    {% if npls_page or toxics_page or overdues_page %}
+                                    <div class="col-auto">
+                                        <div class="dropdown">
+                                            <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                Показать: {% if 'tp' in request.GET %} Топ {{request.GET.tp}} {% else %} Все {% endif %}
+                                            </button>
+                                            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                                <a class="dropdown-item" href="{{ request.path }}?tp=10">Топ 10</a>
+                                                <a class="dropdown-item" href="{{ request.path }}?tp=20">Топ 20</a>
+                                                <a class="dropdown-item" href="{{ request.path }}?tp=50">Топ 50</a>
+                                                <a class="dropdown-item" href="{{ request.path }}?tp=100">Топ 100</a>
+                                                <div class="dropdown-divider"></div>
+                                                <a class="dropdown-item" href="{{ request.path }}">Все</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {%endif%}
+                                    <a class="btn btn-success mb-2" href="{% querystring '_export'='xlsx' %}">Скачать XLSX</a>
                                 </div>
+                                
                             </div><!-- end col-->
                         </div>
                         {% render_table data_table %}
@@ -49,5 +69,15 @@
 
         </div>
     </div>
+
+{% endblock %}
+
+{% block myscripts %}
+<script>
+function myFunction() {
+    var x = document.getElementById("formPreviewMonth");
+    x.submit()
+}
+</script>
 
 {% endblock %}

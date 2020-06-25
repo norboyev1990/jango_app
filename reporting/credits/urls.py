@@ -22,6 +22,7 @@ urlpatterns = [
     path('byaverageweightul/', views.byaverageweight_ul, name='break-by-average-weight-ul'),
     path('byaverageweightfl/', views.byaverageweight_fl, name='break-by-average-weight-fl'),
     path('byretailproduct/', views.byretailproduct, name='break-by-retail-product'),
+    path('exportall/', views.export_all_tables, name='export-all-tables'),
     
     path('search/', views.search, name='search-client'),
     path('contracts/', views.contracts, name='contract-list'),

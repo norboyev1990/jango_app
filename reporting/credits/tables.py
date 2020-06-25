@@ -3,14 +3,16 @@ from .models import *
 import itertools
 
 attr_right_text = {"th":{"class":"text-center"}, "td":{"class":"text-center"}, "tf":{"class":"text-center"}}
+attr_title_text = {"td":{"class":"sorting_1"}, "tf":{"class":"sorting_1"}}
 
 class NplClientsTable(tables.Table):
+    Name = tables.Column(verbose_name="Наименование заёмщика", attrs=attr_title_text)
     Balans = tables.Column(verbose_name="Остаток кредита", attrs=attr_right_text)
     class Meta:
         model = NplClients
         orderable = False
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light"}}
         exclude = ('id',)
 
 class ToxicCreditsTable(tables.Table):
@@ -19,8 +21,8 @@ class ToxicCreditsTable(tables.Table):
     class Meta:
         model = ToxicCredits
         orderable = False
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light"}}
         exclude = ('id',)
 
 class OverdueCreditsTable(tables.Table):
@@ -28,8 +30,8 @@ class OverdueCreditsTable(tables.Table):
     class Meta:
         model = OverdueCredits
         orderable = False
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light"}}
         exclude = ('id',)
         
 class OverallInfoTable(tables.Table):
@@ -41,8 +43,8 @@ class OverallInfoTable(tables.Table):
 
     
     class Meta:
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light"}}
         orderable = False
 
 class ByTermsTable(tables.Table):
@@ -65,8 +67,8 @@ class ByTermsTable(tables.Table):
     
     class Meta:
         model = ByTerms
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light text-truncate"}, "tfoot": {"class": "bg-light"}}
         sequence = ('Title', 'PorBalans', 'PorPercent', 'NplBalans', 'ToxBalans', 'NplToxic', 'TKNWeight', 'ResBalans')
         orderable = False
         exclude = ('id',)
@@ -91,8 +93,8 @@ class ByPercentageTable(tables.Table):
         footer=lambda table: sum(x.FLShortPart for x in table.data))
     class Meta:
         model = ByPercentage
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered table-hover mb-0", "thead": {"class": "thead-dark text-truncate"}, "tfoot": {"class": "bg-light"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered table-hover mb-10", "thead": {"class": "thead-light text-truncate"}, "tfoot": {"class": "bg-light"}}
         orderable = False
         exclude = ('id',)
 
@@ -106,10 +108,10 @@ class ByPercentageULTable(tables.Table):
     Term5  = tables.Column(verbose_name="свыше 10 лет", attrs=attr_right_text, footer=lambda table: sum(x.Term5 for x in table.data))
     class Meta:
         model = ByPercentageUL
-        template_name = "django_tables2/bootstrap.html"
+        template_name = "django_tables2/bootstrap4.html"
         attrs = {
-            "class": "table table-centered table-hover mb-0", 
-            "thead": {"class": "thead-dark text-truncate"}, 
+            "class": "table table-centered table-hover mb-10", 
+            "thead": {"class": "thead-light text-truncate"}, 
             "tfoot": {"class": "bg-light"}}
         orderable = False
         exclude = ('id',)
@@ -122,10 +124,10 @@ class ByAverageULTable(tables.Table):
     JPY_AVERAGE    = tables.Column(attrs=attr_right_text, verbose_name = "JPY")
     
     class Meta:
-        template_name = "django_tables2/bootstrap.html"
+        template_name = "django_tables2/bootstrap4.html"
         attrs = {
-            "class": "table table-centered table-hover mb-0", 
-            "thead": {"class": "thead-dark text-truncate"}, 
+            "class": "table table-centered table-hover mb-10", 
+            "thead": {"class": "thead-light text-truncate"}, 
             "tfoot": {"class": "bg-light"}}
         orderable = False
 
@@ -137,10 +139,10 @@ class ByAverageFLTable(tables.Table):
     )
     
     class Meta:
-        template_name = "django_tables2/bootstrap.html"
+        template_name = "django_tables2/bootstrap4.html"
         attrs = {
-            "class": "table table-centered table-hover mb-0", 
-            "thead": {"class": "thead-dark text-truncate"}, 
+            "class": "table table-centered table-hover mb-10", 
+            "thead": {"class": "thead-light text-truncate"}, 
             "tfoot": {"class": "bg-light"}}
         orderable = False
 
@@ -156,10 +158,10 @@ class ByRetailProductTable(tables.Table):
     NachBalans  = tables.Column(verbose_name="Просрочка по % (16377)", attrs=attr_right_text, footer=lambda table: sum(x.NachBalans for x in table.data))
     class Meta:
         model = ByRetailProduct
-        template_name = "django_tables2/bootstrap.html"
+        template_name = "django_tables2/bootstrap4.html"
         attrs = {
-            "class": "table table-centered table-hover mb-0", 
-            "thead": {"class": "thead-dark text-truncate"}, 
+            "class": "table table-centered table-hover mb-10", 
+            "thead": {"class": "thead-light text-truncate"}, 
             "tfoot": {"class": "bg-light"}}
         orderable = False
         exclude = ('id',)
@@ -168,8 +170,8 @@ class ByRetailProductTable(tables.Table):
 class ContractListTable(tables.Table):
     class Meta:
         model = ReportData
-        template_name = "django_tables2/bootstrap.html"
-        attrs = {"class": "table table-centered mb-0", "thead": {"class": "thead-light"}}
+        template_name = "django_tables2/bootstrap4.html"
+        attrs = {"class": "table table-centered mb-10", "thead": {"class": "thead-light"}}
         orderable = True
         fields = (
             'id',
