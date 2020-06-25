@@ -1059,3 +1059,50 @@ class Query():
             ORDER BY CODE_CONTRACT
         
         '''
+
+    def named_query_npls_by_branches():
+        return '''
+            WITH RECURSIVE  
+                REPORT_DATA_TABLE (
+                    GROUPS,	TITLE, GEOCODE, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, 
+                    OSTATOK_VNEB_PROSR, VSEGO_ZADOLJENNOST) AS (
+                    SELECT 
+                        B.SORT AS GROUPS,
+                        B.NAME AS TITLE,
+						B.GEOCODE,
+                        CASE T.SUBJ WHEN 'J' 
+							THEN SUBSTR(CREDIT_SCHET,10,8)
+                            ELSE SUBSTR(INN_PASSPORT,11,9) 
+							END AS UNIQUE_CODE,
+                        JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS),
+                        OSTATOK_SUDEB, 
+                        OSTATOK_VNEB_PROSR,
+                        VSEGO_ZADOLJENNOST
+                    FROM CREDITS_REPORTDATA R
+					LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+					LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                    WHERE REPORT_ID = %s
+                ),
+
+                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
+                    SELECT UNIQUE_CODE
+                    FROM REPORT_DATA_TABLE R
+                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
+                    GROUP BY UNIQUE_CODE
+                ),
+                
+                NPL_TABLE (GROUPS, TITLE, GEOCODE, BALANS) AS(
+                    SELECT GROUPS, TITLE, GEOCODE, SUM(VSEGO_ZADOLJENNOST)
+                    FROM NPL_UNIQUE_TABLE N
+                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
+                    GROUP BY GROUPS
+                )
+            SELECT 
+                GROUPS AS id,
+                TITLE AS Title,
+                GEOCODE AS GeoCode,
+                IFNULL(N.BALANS/1000000,0) AS Balance
+            FROM NPL_TABLE N
+            ORDER BY GROUPS
+        '''

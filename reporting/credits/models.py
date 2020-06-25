@@ -71,9 +71,10 @@ class ReportData(models.Model):
         return self.NAME_CLIENT
 
 class Branch(models.Model):
-    CODE = models.CharField(max_length=5)
+    CODE = models.CharField(max_length=5, db_index=True)
     NAME = models.CharField(max_length=255)
     SORT = models.IntegerField(null=True)
+    GEOCODE = models.CharField(max_length=7, null=True)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
 
@@ -84,14 +85,14 @@ class ClientType(models.Model):
        ('ИП', ('Индивидуалные предприятия')),
     )
     SUBJECT = models.TextChoices('Subject', 'P J')
-    CODE = models.CharField(max_length=5)
+    CODE = models.CharField(max_length=5, db_index=True)
     NAME = models.CharField(choices=CHOICES, max_length=2, default='ФЛ')
     SUBJ = models.CharField(choices=SUBJECT.choices, max_length=1, default='P')
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
 
 class Currency(models.Model):
-    CODE = models.CharField(max_length=3)
+    CODE = models.CharField(max_length=3, db_index=True)
     NAME = models.CharField(max_length=3)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
@@ -108,7 +109,7 @@ class Segment(models.Model):
        ('Транспорт', 'Транспорт'),
        ('Заготовки', 'Заготовки'),
     )
-    CODE = models.CharField(max_length=2)
+    CODE = models.CharField(max_length=2, db_index=True)
     NAME = models.CharField(choices=CHOICES, max_length=255)
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
@@ -198,3 +199,8 @@ class ByRetailProduct(models.Model):
 
     class Meta:
         managed  = False
+
+class DataByGeocode(models.Model):
+    Title       = models.CharField(max_length=255)
+    GeoCode     = models.CharField(max_length=7)
+    Balance     = models.DecimalField(max_digits=12, decimal_places=0)

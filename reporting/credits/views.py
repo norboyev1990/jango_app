@@ -29,32 +29,24 @@ def setReviewMonthInSession(request):
 def index(request):
     setReviewMonthInSession(request)
 
-    date = pd.to_datetime(request.session['data_month'])
-    yearValue = date.year
-    monthCode = date.month
+    sMonth = pd.to_datetime(request.session['data_month'])
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
     cursor = connection.cursor()
-    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
+    cursor.execute(Query.named_query_indicators(), {'month2':sMonth.month, 'month1':sMonth.month-1})
     data = [2]
     for row in CursorByName(cursor):
         data.append(row)
 
-    gdpData = {
-        'UZB363': 830510,
-        'UZB358': 1502964,
-        'UZB355': 877644,
-        'UZB354': 1031264,
-        'UZB357': 579577,
-        'UZB356': 851082,
-        'UZB364': 887582,
-        'UZB365': 682262,
-        'UZB372': 824355,
-        'UZB371': 803318,
-        'UZB361': 716675,
-        'UZB370': 883869,
-        
-        'UZB362': 684108
-    },
+    
+    
+    gdpData = [],
+    
+    gdp = DataByGeocode.objects.raw(Query.named_query_npls_by_branches(), [report.id])
+
+    for c in gdp:
+        gdpData.append(c)
+    
 
     statistics = {
         'portfolio_value'   : int(data[2]['CREDIT']/1000000),
