@@ -6,7 +6,7 @@
     }
 
     function numberWithCommas(x) {
-        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
     }
 
     e.prototype.initCharts = function() {
@@ -39,7 +39,7 @@
         (n = i("#sessions-overview").data("colors")) && (a = n.split(","));
         var o = {
             chart: {
-                height: 309,
+                height: 310,
                 type: "area"
             },
             dataLabels: {
@@ -115,7 +115,7 @@
         o = {
             
             chart: {
-                height: 500,
+                height: 430,
                 type: "bar"
             },
             plotOptions: {
@@ -128,7 +128,7 @@
                 enabled: !1
             },
             series: [{
-                name: "Sessions",
+                name: "Total",
                 data: Object.values(gdpData)
             }],
             xaxis: {

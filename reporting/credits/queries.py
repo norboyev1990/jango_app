@@ -37,7 +37,11 @@ class Query():
             LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
             LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
             WHERE R.REPORT_ID = %s
-            GROUP BY SUBSTR(CREDIT_SCHET,10,8)
+            GROUP BY 
+                CASE T.SUBJ
+                    WHEN 'J' THEN SUBSTR(CREDIT_SCHET,10,8)
+                    ELSE SUBSTR(INN_PASSPORT,11,9)
+                END
             HAVING SUM(OSTATOK_PERESM) IS NOT NULL  
                 AND SUM(OSTATOK_VNEB_PROSR) IS NULL 
                 AND SUM(OSTATOK_SUDEB) IS NULL 
@@ -50,10 +54,10 @@ class Query():
     def named_query_overdues():
         return '''
             SELECT R.ID, 
-                ROW_NUMBER () OVER (ORDER BY SUM(OSTATOK_NACH_PROSR_PRCNT) DESC) AS Number,
+                ROW_NUMBER () OVER (ORDER BY SUM(OSTATOK_PROSR) DESC) AS Number,
                 NAME_CLIENT AS Name,
                 B.NAME AS Branch,
-                SUM(OSTATOK_NACH_PROSR_PRCNT)/1000000 AS Balans
+                SUM(OSTATOK_PROSR)/1000000 AS Balans
             FROM CREDITS_REPORTDATA R
             LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
             LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
@@ -1062,47 +1066,67 @@ class Query():
 
     def named_query_npls_by_branches():
         return '''
-            WITH RECURSIVE  
-                REPORT_DATA_TABLE (
-                    GROUPS,	TITLE, GEOCODE, UNIQUE_CODE, DAYS, OSTATOK_SUDEB, 
-                    OSTATOK_VNEB_PROSR, VSEGO_ZADOLJENNOST) AS (
-                    SELECT 
-                        B.SORT AS GROUPS,
-                        B.NAME AS TITLE,
-						B.GEOCODE,
-                        CASE T.SUBJ WHEN 'J' 
-							THEN SUBSTR(CREDIT_SCHET,10,8)
-                            ELSE SUBSTR(INN_PASSPORT,11,9) 
-							END AS UNIQUE_CODE,
-                        JULIANDAY(L.START_MONTH) - JULIANDAY(DATE_OBRAZ_PROS),
-                        OSTATOK_SUDEB, 
-                        OSTATOK_VNEB_PROSR,
-                        VSEGO_ZADOLJENNOST
-                    FROM CREDITS_REPORTDATA R
-					LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
-                    LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
-					LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
-                    WHERE REPORT_ID = %s
-                ),
-
-                NPL_UNIQUE_TABLE (UNIQUE_CODE) AS (
-                    SELECT UNIQUE_CODE
-                    FROM REPORT_DATA_TABLE R
-                    WHERE DAYS > 90 OR OSTATOK_SUDEB IS NOT NULL OR OSTATOK_VNEB_PROSR IS NOT NULL
-                    GROUP BY UNIQUE_CODE
-                ),
-                
-                NPL_TABLE (GROUPS, TITLE, GEOCODE, BALANS) AS(
-                    SELECT GROUPS, TITLE, GEOCODE, SUM(VSEGO_ZADOLJENNOST)
-                    FROM NPL_UNIQUE_TABLE N
-                    LEFT JOIN REPORT_DATA_TABLE D ON D.UNIQUE_CODE = N.UNIQUE_CODE
-                    GROUP BY GROUPS
-                )
             SELECT 
-                GROUPS AS id,
-                TITLE AS Title,
-                GEOCODE AS GeoCode,
-                CAST(IFNULL(N.BALANS/1000000,0) AS INTEGER) AS Balance
-            FROM NPL_TABLE N
-            ORDER BY GROUPS
+                ID AS id, 
+                NAME AS Title, 
+                GEOCODE AS GeoCode, 
+                SUM(TOTAL_LOAN)/1000000 AS Balance 
+            FROM (
+                SELECT R.ID, B.NAME, B.GEOCODE, 
+                    SUM(VSEGO_ZADOLJENNOST) AS TOTAL_LOAN,
+                    DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month') AS SDate
+                FROM CREDITS_REPORTDATA R
+                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                WHERE R.REPORT_ID = %s
+                GROUP BY CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END
+                HAVING JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) > 90 
+                    OR SUM(OSTATOK_SUDEB) IS NOT NULL 
+                    OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL
+                )
+            GROUP BY GEOCODE
+            ORDER BY BALANCE
+        '''
+
+    def named_query_toxics_by_branches():
+        return '''
+            SELECT 
+                ID AS id, 
+                NAME AS Title, 
+                GEOCODE AS GeoCode, 
+                CAST(IFNULL(SUM(TOTAL_LOAN)/1000000,0) AS INTEGER) AS Balance 
+            FROM (
+                SELECT R.ID, B.NAME, B.GEOCODE, 
+                    SUM(VSEGO_ZADOLJENNOST) AS TOTAL_LOAN,
+                    DATE('now','start of year','+'||(L.REPORT_MONTH-1)||' month') AS SDate
+                FROM CREDITS_REPORTDATA R
+                LEFT JOIN CREDITS_CLIENTTYPE T ON T.CODE = R.BALANS_SCHET
+                LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+                LEFT JOIN CREDITS_LISTREPORTS L ON L.ID = R.REPORT_ID
+                WHERE R.REPORT_ID = %s
+                GROUP BY CASE T.SUBJ WHEN 'J' THEN SUBSTR(R.CREDIT_SCHET,10,8) ELSE SUBSTR(R.INN_PASSPORT,11,9) END
+                HAVING SUM(OSTATOK_PERESM) IS NOT NULL  
+                    AND SUM(OSTATOK_VNEB_PROSR) IS NULL 
+                    AND SUM(OSTATOK_SUDEB) IS NULL 
+                    AND (JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) < 90 
+                    OR JULIANDAY(SDATE) - JULIANDAY(MIN(DATE_OBRAZ_PROS)) IS NULL
+                    )
+                )
+            GROUP BY GEOCODE
+            ORDER BY BALANCE
+        '''
+
+    def named_query_overdues_by_branches():
+        return '''
+            SELECT 
+                R.ID AS id, 
+                B.NAME AS Title,
+                B.GEOCODE AS GeoCode,  
+                SUM(OSTATOK_PROSR)/1000000 AS Balance
+            FROM CREDITS_REPORTDATA R
+            LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
+            WHERE R.REPORT_ID = %s
+            GROUP BY B.GEOCODE
+            ORDER BY Balance
         '''

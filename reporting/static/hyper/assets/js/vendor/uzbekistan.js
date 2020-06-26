@@ -2,7 +2,7 @@ $.fn.vectorMap('addMap', 'uzbekistan_mill_en', {
     "insets": [{
         "width": 900.0,
         "top": 0,
-        "height": 700,
+        "height": 720,
         "bbox": [{
             "y": -12671671.123330014,
             "x": -20004297.151525836
@@ -71,7 +71,7 @@ $.fn.vectorMap('addMap', 'uzbekistan_mill_en', {
         },
         
     },
-    "height": 700,
+    "height": 650,
     "projection": {
         "type": "mill",
         "centralMeridian": 11.5

@@ -42,8 +42,19 @@ def index(request):
     
     gdpData = {}
     gdpName = {}
-    for p in DataByGeocode.objects.raw(Query.named_query_npls_by_branches(), [report.id]):
-        gdpData[p.GeoCode] = p.Balance
+
+    if (request.GET.get('q')=='tox'):
+        geoTitle = "Токсичные кредиты"
+        geoData = DataByGeocode.objects.raw(Query.named_query_toxics_by_branches(), [report.id])
+    elif (request.GET.get('q')=='prs'):
+        geoTitle = "Просрочка"
+        geoData = DataByGeocode.objects.raw(Query.named_query_overdues_by_branches(), [report.id])
+    else:
+        geoTitle = "NPL клиенты"
+        geoData = DataByGeocode.objects.raw(Query.named_query_npls_by_branches(), [report.id])
+
+    for p in geoData:
+        gdpData[p.GeoCode] = int(p.Balance)
         gdpName[p.GeoCode] = p.Title
     
 
@@ -69,6 +80,7 @@ def index(request):
         "npls_page": "active",
         "gdpData": json.dumps(gdpData),
         "gdpName": json.dumps(gdpName),
+        "geoTitle": geoTitle,
     }
 
     return render(request, 'credits/index.html', context)
