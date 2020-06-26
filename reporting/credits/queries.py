@@ -1130,3 +1130,22 @@ class Query():
             GROUP BY B.GEOCODE
             ORDER BY Balance
         '''
+
+    def named_query_byweight_ul():
+        return '''
+            SELECT CREDIT_PROCENT, VSEGO_ZADOLJENNOST, SROK, C.NAME AS VALUTE, T.NAME AS TYPE_CLIENT
+	            FROM credits_reportdata R
+	            LEFT JOIN credits_currency C ON C.CODE = R.CODE_VAL
+	            LEFT JOIN credits_clienttype T ON T.CODE = R.BALANS_SCHET
+	            WHERE TYPE_CLIENT = 'ЮЛ' AND REPORT_ID = %s;
+            '''
+    
+    def named_query_byweight_fl():
+        return '''
+            SELECT CREDIT_PROCENT, VSEGO_ZADOLJENNOST, VID_KREDITOVANIYA, SROK, C.NAME AS VALUTE, T.NAME AS TYPE_CLIENT
+	            FROM credits_reportdata R
+	            LEFT JOIN credits_currency C ON C.CODE = R.CODE_VAL
+	            LEFT JOIN credits_clienttype T ON T.CODE = R.BALANS_SCHET
+	            WHERE TYPE_CLIENT = 'ФЛ' AND REPORT_ID = %s;
+            '''
+        

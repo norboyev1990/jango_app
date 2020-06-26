@@ -469,21 +469,399 @@ def export_all_tables(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     cursor = connection.cursor()
-    
+   
+    #NPLS
     cursor.execute(Query.named_query_npls(), [report.id])
-    data = []
+    npl_data = []
     for row in CursorByName(cursor):
-        data.append(row)
+        npl_data.append(row)
     
-    df = pd.DataFrame(data[1:])
+    npls_df = pd.DataFrame(npl_data[1:])
+    npls_df = npls_df.head(10)
+    npls_df.drop(['id', 'Number', 'SDATE'], axis=1, inplace = True)
+    npls_df.rename(columns={"Name": "Наименование клиента", "Branch": "Филиал", "Balans": "Остаток Кредита"}, inplace =True)
+
+    #TOXIC
+    cursor.execute(Query.named_query_toxics(), [report.id])
+    toxic = []
+    for row in CursorByName(cursor):
+        toxic.append(row)
+    toxic_df = pd.DataFrame(toxic[1:])
+    toxic_df = toxic_df.head(10)
+    toxic_df.drop(['id', 'Number', 'SDate'], axis=1, inplace = True)
+    toxic_df.rename(columns={"Name": "Наименование клиента", "Branch": "Филиал", "Balans": "Остаток Кредита"}, inplace =True)
+
+    #OVERDUE
+    cursor.execute(Query.named_query_overdues(), [report.id])
+    overdues = []
+    for row in CursorByName(cursor):
+        overdues.append(row)
+    overdues_df = pd.DataFrame(overdues[1:])
+    overdues_df = overdues_df.head(10)
+    overdues_df.drop(['id', 'Number'], axis=1, inplace = True)
+    overdues_df.rename(columns={"Name": "Наименование клиента", "Branch": "Филиал", "Balans": "Остаток Кредита"}, inplace =True)
+    
+    #BYTERM
+    cursor.execute(Query.named_query_byterms(), [report.id, report.id])
+    byterm = []
+    for row in CursorByName(cursor):
+        byterm.append(row)
+    byterm_df = pd.DataFrame(byterm)
+    byterm_df.drop(['id'], axis=1, inplace = True)
+    byterm_df = byterm_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    byterm_df = byterm_df.reset_index()
+
+    byterm_df.rename(columns={"Title": "Сроки", "NplBalans": "NPL", "NplToxic": "ТК+NPL", "PorBalans": "Кредитный портфель", "PorPercent": "Доля %", 
+                                 "ResBalans": "Резервы", "ToxBalans": "Токсичные кредиты"}, inplace =True)
+
+    byterm_df = byterm_df.set_index('Сроки')
+    new_index = ['свыше 10 лет', 'от 7-ми до 10 лет', 'от 5-ти до 7 лет', 'от 2-х до 5 лет', 'до 2-х лет', 'total']
+    byterm_df = byterm_df.reindex(new_index)
+    byterm_df = byterm_df.rename({'total': 'Итого:'}, axis='index')
+    byterm_df = byterm_df.reset_index()
+    byterm_df['Удельный вес к своему портфелю'] =(byterm_df['ТК+NPL'] / byterm_df['Кредитный портфель']* 100).round(1).astype('str') + '%'
+    byterm_df['Покрытие ТК+NPL резервами'] = (byterm_df['Резервы'] / byterm_df['ТК+NPL'] * 100).round(1).astype('str') + '%'
+    byterm_df = byterm_df[["Сроки", 'Кредитный портфель', 'Доля %', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Удельный вес к своему портфелю', 'Резервы', 'Покрытие ТК+NPL резервами']]
+    byterm_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']] = byterm_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']].round(0)
+    
+
+    #BYSUBJECTS
+    cursor.execute(Query.named_query_bysubjects(), [report.id, report.id])
+    bysubjects = []
+    for row in CursorByName(cursor):
+        bysubjects.append(row)
+    bysubjects_df = pd.DataFrame(bysubjects)
+    bysubjects_df.drop(['id'], axis=1, inplace = True)
+    bysubjects_df = bysubjects_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bysubjects_df = bysubjects_df.reset_index()
+
+    bysubjects_df.rename(columns={"Title": "Статус", "NplBalans": "NPL", "PorBalans": "Кредитный портфель", "PorPercent": "Доля %", 
+                                 "ResBalans": "Резервы", "ToxBalans": "Токсичные кредиты"}, inplace =True)
+
+    bysubjects_df = bysubjects_df.set_index('Статус')
+    new_index = ['ЮЛ', 'ИП', 'ФЛ', 'total']
+    bysubjects_df = bysubjects_df.reindex(new_index)
+    bysubjects_df = bysubjects_df.rename({'total': 'Итого:'}, axis='index')
+    bysubjects_df = bysubjects_df.reset_index()
+    bysubjects_df['Доля %'] = (bysubjects_df['Кредитный портфель'] / bysubjects_df['Кредитный портфель'].iloc[-1] * 100 ).round(1).astype('str') + '%'
+    bysubjects_df['ТК+NPL'] = bysubjects_df['NPL'] + bysubjects_df['Токсичные кредиты']
+    bysubjects_df['Удельный вес к своему портфелю'] =(bysubjects_df['ТК+NPL'] / bysubjects_df['Кредитный портфель']* 100).round(1).astype('str') + '%'
+    bysubjects_df['Покрытие ТК+NPL резервами'] = (bysubjects_df['Резервы'] / bysubjects_df['ТК+NPL'] * 100).round(1).astype('str') + '%'
+    bysubjects_df = bysubjects_df[["Статус", 'Кредитный портфель', 'Доля %', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Удельный вес к своему портфелю', 'Резервы', 'Покрытие ТК+NPL резервами']]
+    bysubjects_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']] = bysubjects_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']].round(0)
+
+    #BYSEGMENTS
+    cursor.execute(Query.named_query_bysegments(), [report.id, report.id])
+    bysegments = []
+    for row in CursorByName(cursor):
+        bysegments.append(row)
+    bysegments_df = pd.DataFrame(bysegments)
+    bysegments_df.drop(['id'], axis=1, inplace = True)
+    bysegments_df = bysegments_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bysegments_df = bysegments_df.reset_index()
+
+    bysegments_df.rename(columns={"Title": "Сегмент", "NplBalans": "NPL", "PorBalans": "Кредитный портфель", "PorPercent": "Доля %", 
+                                "ResBalans": "Резервы", "ToxBalans": "Токсичные кредиты"}, inplace =True)
+
+    bysegments_df = bysegments_df.set_index('Сегмент')
+    new_index = ['Инвест. проекты', 'ЮЛ', 'РБ', 'total']
+    bysegments_df = bysegments_df.reindex(new_index)
+    bysegments_df = bysegments_df.rename({'total': 'Итого:'}, axis='index')
+    bysegments_df = bysegments_df.reset_index()
+    bysegments_df['Доля %'] = (bysubjects_df['Кредитный портфель'] / bysegments_df['Кредитный портфель'].iloc[-1] * 100 ).round(1).astype('str') + '%'
+    bysegments_df['ТК+NPL'] = bysegments_df['NPL'] + bysegments_df['Токсичные кредиты']
+    bysegments_df['Удельный вес к своему портфелю'] =(bysegments_df['ТК+NPL'] / bysegments_df['Кредитный портфель']* 100).round(1).astype('str') + '%'
+    bysegments_df['Покрытие ТК+NPL резервами'] = (bysegments_df['Резервы'] / bysegments_df['ТК+NPL'] * 100).round(1).astype('str') + '%'
+    bysegments_df = bysegments_df[["Сегмент", 'Кредитный портфель', 'Доля %', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Удельный вес к своему портфелю', 'Резервы', 'Покрытие ТК+NPL резервами']]
+    bysegments_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']] = bysegments_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']].round(0)
+
+    #BYCURRENCY
+    cursor.execute(Query.named_query_bycurrency(), [report.id, report.id])
+    bycurrency = []
+    for row in CursorByName(cursor):
+        bycurrency.append(row)
+    bycurrency_df = pd.DataFrame(bycurrency)
+    bycurrency_df.drop(['id'], axis=1, inplace = True)
+    bycurrency_df = bycurrency_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bycurrency_df = bycurrency_df.reset_index()
+
+    bycurrency_df.rename(columns={"Title": "Валюты", "NplBalans": "NPL", "PorBalans": "Кредитный портфель", "PorPercent": "Доля %", 
+                                "ResBalans": "Резервы", "ToxBalans": "Токсичные кредиты"}, inplace =True)
+
+    bycurrency_df = bycurrency_df.set_index('Валюты')
+    new_index = ['Национальная валюта', 'Иностранная валюта', 'total']
+    bycurrency_df = bycurrency_df.reindex(new_index)
+    bycurrency_df = bycurrency_df.rename({'total': 'Итого:'}, axis='index')
+    bycurrency_df = bycurrency_df.reset_index()
+    bycurrency_df['Доля %'] = (bycurrency_df['Кредитный портфель'] / bycurrency_df['Кредитный портфель'].iloc[-1] * 100 ).round(1).astype('str') + '%'
+    bycurrency_df['ТК+NPL'] = bycurrency_df['NPL'] + bycurrency_df['Токсичные кредиты']
+    bycurrency_df['Удельный вес к своему портфелю'] =(bycurrency_df['ТК+NPL'] / bycurrency_df['Кредитный портфель']* 100).round(1).astype('str') + '%'
+    bycurrency_df['Покрытие ТК+NPL резервами'] = (bycurrency_df['Резервы'] / bycurrency_df['ТК+NPL'] * 100).round(1).astype('str') + '%'
+    bycurrency_df = bycurrency_df[["Валюты", 'Кредитный портфель', 'Доля %', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Удельный вес к своему портфелю', 'Резервы', 'Покрытие ТК+NPL резервами']]
+    bycurrency_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']] = bycurrency_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']].round(0)
+
+    #BYBRANCHES
+    cursor.execute(Query.named_query_bybranches(), [report.id, report.id])
+    bybranches = []
+    for row in CursorByName(cursor):
+        bybranches.append(row)
+    bybranches_df = pd.DataFrame(bybranches)
+    bybranches_df.drop(['id'], axis=1, inplace = True)
+    bybranches_df = bybranches_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bybranches_df = bybranches_df.reset_index()
+
+    bybranches_df.rename(columns={"Title": "Филиалы", "PorBalans": "Кредитный портфель", "PorPercent": "Доля %", "NplBalans": "NPL",   
+                                  "ToxBalans": "Токсичные кредиты" , "ResBalans": "Резервы"}, inplace =True)
+    bybranches_df = bybranches_df.set_index('Филиалы')
+    bybranches_df = bybranches_df.rename({'total': 'Итого:'}, axis='index')
+    bybranches_df = bybranches_df.reset_index()
+    bybranches_df['Доля %'] = (bybranches_df['Кредитный портфель'] / bybranches_df['Кредитный портфель'].iloc[-1] * 100 ).round(1).astype('str') + '%'
+    bybranches_df['ТК+NPL'] = bybranches_df['NPL'] + bybranches_df['Токсичные кредиты']
+    bybranches_df['Удельный вес к своему портфелю'] =(bybranches_df['ТК+NPL'] / bybranches_df['Кредитный портфель']* 100).round(1).astype('str') + '%'
+    bybranches_df['Покрытие ТК+NPL резервами'] = (bybranches_df['Резервы'] / bybranches_df['ТК+NPL'] * 100).round(1).astype('str') + '%'
+    bybranches_df = bybranches_df[["Филиалы", 'Кредитный портфель', 'Доля %', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Удельный вес к своему портфелю', 'Резервы', 'Покрытие ТК+NPL резервами']]
+    bybranches_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']] = bybranches_df[['Кредитный портфель', 'NPL', 'Токсичные кредиты', 'ТК+NPL', 'Резервы']].round(0)
+
+    #BY NATIONAL PERCENTAGE 
+    cursor.execute(Query.named_query_bypercentage_national(), [report.id])
+    bypercentage_national = []
+    for row in CursorByName(cursor):
+        bypercentage_national.append(row)
+    bypercentage_national_df = pd.DataFrame(bypercentage_national)
+    bypercentage_national_df.drop(['id', 'Number'], axis=1, inplace = True)
+    bypercentage_national_df = bypercentage_national_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bypercentage_national_df = bypercentage_national_df.reset_index()
+
+    bypercentage_national_df.rename(columns={"Title": "Коридор", "FLLongPart": "Доля % ФЛД", "FLLongTerm": "ФЛ-Долгосрочный", "FLShortPart": "Доля % ФЛК", 
+                                 "FLShortTerm": "ФЛ-Краткосрочный", "ULLongPart": "Токсичные кредиты", 'ULLongTerm': 'ЮЛ-Долгосрочный', 
+                                 'ULShortPart': 'Доля % ЮЛД', 'ULShortTerm':'ЮЛ-Краткосрочный'}, inplace =True)
+
+    bypercentage_national_df = bypercentage_national_df[["Коридор", 'ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']]
+    bypercentage_national_df = bypercentage_national_df.set_index('Коридор')
+    pctCols = []
+    for colName, col in bypercentage_national_df.iteritems():
+        if colName[0] != 'total':
+            pctCol = (col / col.iloc[-1] * 100).round(1).astype('str') + '%'
+            pctCol.name = 'Доля %'
+            pctCols.append(pctCol)
+
+    pos = 1
+    for col in pctCols:
+        bypercentage_national_df.insert(pos, column=col.name, value=col, allow_duplicates=True)
+        pos += 2
+
+    bypercentage_national_df = bypercentage_national_df.apply(lambda x:x.replace("nan%", '0'))
+    bypercentage_national_df = bypercentage_national_df.fillna(0)
+    bypercentage_national_df = bypercentage_national_df.rename({'total': 'Итого:'}, axis='index')
+    bypercentage_national_df = bypercentage_national_df.reset_index()
+    bypercentage_national_df[['ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']] = bypercentage_national_df[['ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']].round(0)
+
+    #BY FOREGIN PERCENTAGE
+    cursor.execute(Query.named_query_bypercentage_foreign(), [report.id])
+    bypercentage_foreign = []
+    for row in CursorByName(cursor):
+        bypercentage_foreign.append(row)
+    bypercentage_foreign_df = pd.DataFrame(bypercentage_foreign)
+    bypercentage_foreign_df.drop(['id', 'Number'], axis=1, inplace = True)
+    bypercentage_foreign_df = bypercentage_foreign_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bypercentage_foreign_df = bypercentage_foreign_df.reset_index()
+
+    bypercentage_foreign_df.rename(columns={"Title": "Коридор", "FLLongPart": "Доля % ФЛД", "FLLongTerm": "ФЛ-Долгосрочный", "FLShortPart": "Доля % ФЛК", 
+                                 "FLShortTerm": "ФЛ-Краткосрочный", "ULLongPart": "Токсичные кредиты", 'ULLongTerm': 'ЮЛ-Долгосрочный', 
+                                 'ULShortPart': 'Доля % ЮЛД', 'ULShortTerm':'ЮЛ-Краткосрочный'}, inplace =True)
+
+    bypercentage_foreign_df = bypercentage_foreign_df[["Коридор", 'ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']]
+    bypercentage_foreign_df = bypercentage_foreign_df.set_index('Коридор')
+    pctCols = []
+    for colName, col in bypercentage_foreign_df.iteritems():
+        if colName[0] != 'total':
+            pctCol = (col / col.iloc[-1] * 100).round(1).astype('str') + '%'
+            pctCol.name = 'Доля %'
+            pctCols.append(pctCol)
+
+    pos = 1
+    for col in pctCols:
+        bypercentage_foreign_df.insert(pos, column=col.name, value=col, allow_duplicates=True)
+        pos += 2
+
+    bypercentage_foreign_df = bypercentage_foreign_df.apply(lambda x:x.replace("nan%", '0'))
+    bypercentage_foreign_df = bypercentage_foreign_df.fillna(0)
+    bypercentage_foreign_df = bypercentage_foreign_df.rename({'total': 'Итого:'}, axis='index')
+    bypercentage_foreign_df = bypercentage_foreign_df.reset_index()
+    bypercentage_foreign_df[['ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']] = bypercentage_foreign_df[['ЮЛ-Долгосрочный', 'ЮЛ-Краткосрочный', 'ФЛ-Долгосрочный', 'ФЛ-Краткосрочный']].round(0)
+    
+    #В национальной валюте по ЮЛ (по срокам кредитов)                                                                              
+    cursor.execute(Query.named_query_bypercentage_national_ul(), [report.id])
+    bypercentage_national_ul = []
+    for row in CursorByName(cursor):
+        bypercentage_national_ul.append(row)
+    bypercentage_national_ul_df = pd.DataFrame(bypercentage_national_ul)
+    bypercentage_national_ul_df.drop(['id', 'Number'], axis=1, inplace = True)
+    bypercentage_national_ul_df = bypercentage_national_ul_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bypercentage_national_ul_df = bypercentage_national_ul_df.reset_index()
+
+    bypercentage_national_ul_df.rename(columns={"Title": "Коридор", "Term1": "до 2-х лет", "Term2": "от 2-х до 5 лет", "Term3": "от 5-ти до 7 лет", 
+                                 "Term4": "от 7-ми до 10 лет", "Term5": "свыше 10 лет"}, inplace =True)
+
+    bypercentage_national_ul_df = bypercentage_national_ul_df.set_index('Коридор')
+    pctCols = []
+    for colName, col in bypercentage_national_ul_df.iteritems():
+         if colName[0] != 'total':
+             pctCol = (col / col.iloc[-1] * 100).round(1).astype('str') + '%'
+             pctCol.name = 'Доля %'
+             pctCols.append(pctCol)
+
+    pos = 1
+    for col in pctCols:
+        bypercentage_national_ul_df.insert(pos, column=col.name, value=col, allow_duplicates=True)
+        pos += 2
+
+    bypercentage_national_ul_df = bypercentage_national_ul_df.apply(lambda x:x.replace("nan%", '0'))
+    bypercentage_national_ul_df = bypercentage_national_ul_df.fillna(0)
+    bypercentage_national_ul_df = bypercentage_national_ul_df.rename({'total': 'Итого:'}, axis='index')
+    bypercentage_national_ul_df = bypercentage_national_ul_df.reset_index()
+    bypercentage_national_ul_df[['до 2-х лет', 'от 2-х до 5 лет', 'от 5-ти до 7 лет', 'от 7-ми до 10 лет', 'свыше 10 лет']] = bypercentage_national_ul_df[['до 2-х лет', 'от 2-х до 5 лет', 'от 5-ти до 7 лет', 'от 7-ми до 10 лет', 'свыше 10 лет']].round(0)
+
+    #В иностранной  валюте по ЮЛ (по срокам кредитов)                                                                              
+    cursor.execute(Query.named_query_bypercentage_foreign_ul(), [report.id])
+    bypercentage_foreign_ul = []
+    for row in CursorByName(cursor):
+        bypercentage_foreign_ul.append(row)
+    bypercentage_foreign_ul_df = pd.DataFrame(bypercentage_foreign_ul)
+    bypercentage_foreign_ul_df.drop(['id', 'Number'], axis=1, inplace = True)
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.pivot_table(index='Title',
+               margins=True,
+               margins_name='total',  # defaults to 'All'
+               aggfunc=sum)
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.reset_index()
+
+    bypercentage_foreign_ul_df.rename(columns={"Title": "Коридор", "Term1": "до 2-х лет", "Term2": "от 2-х до 5 лет", "Term3": "от 5-ти до 7 лет", 
+                                 "Term4": "от 7-ми до 10 лет", "Term5": "свыше 10 лет"}, inplace =True)
+
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.set_index('Коридор')
+    pctCols = []
+    for colName, col in bypercentage_foreign_ul_df.iteritems():
+         if colName[0] != 'total':
+             pctCol = (col / col.iloc[-1] * 100).round(1).astype('str') + '%'
+             pctCol.name = 'Доля %'
+             pctCols.append(pctCol)
+
+    pos = 1
+    for col in pctCols:
+        bypercentage_foreign_ul_df.insert(pos, column=col.name, value=col, allow_duplicates=True)
+        pos += 2
+
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.apply(lambda x:x.replace("nan%", '0'))
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.fillna(0)
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.rename({'total': 'Итого:'}, axis='index')
+    bypercentage_foreign_ul_df = bypercentage_foreign_ul_df.reset_index()
+    bypercentage_foreign_ul_df[['до 2-х лет', 'от 2-х до 5 лет', 'от 5-ти до 7 лет', 'от 7-ми до 10 лет', 'свыше 10 лет']] = bypercentage_foreign_ul_df[['до 2-х лет', 'от 2-х до 5 лет', 'от 5-ти до 7 лет', 'от 7-ми до 10 лет', 'свыше 10 лет']].round(0)
+
+    #В разбивке по средневзвешенной процентной ставке (Юридические лица)                                                                             
+    cursor.execute(Query.named_query_byweight_ul(), [report.id])
+    byweight_ul = []
+    for row in CursorByName(cursor):
+        byweight_ul.append(row)
+    byaverageweight_ul_df = pd.DataFrame(byweight_ul)
+    byaverageweight_ul_df['sum_credit'] = byaverageweight_ul_df['CREDIT_PROCENT'] * byaverageweight_ul_df['VSEGO_ZADOLJENNOST']
+    by_sred_vzv_yur = pd.pivot_table(byaverageweight_ul_df, values='VSEGO_ZADOLJENNOST', index=['SROK'],
+                    columns=['VALUTE'], aggfunc=np.sum, fill_value=0, margins= True)
+
+    by_sred_vzv_yur2 = pd.pivot_table(byaverageweight_ul_df, values='sum_credit', index=['SROK'],
+                    columns=['VALUTE'], aggfunc=np.sum, fill_value=0, margins= True)
+    
+    test = by_sred_vzv_yur2.div(by_sred_vzv_yur).reset_index()
+    by_sred_vzv = pd.DataFrame(test.to_records())
+    by_sred_vzv = by_sred_vzv.set_index('SROK')
+    by_sred_vzv = by_sred_vzv.drop(['index', 'All'], axis=1)
+    new_index = ['3-Долгосрочный', '1-Краткосрочный', 'All']
+    by_sred_vzv = by_sred_vzv.reindex(new_index)
+    by_sred_vzv = by_sred_vzv[['UZS', 'USD', 'EUR', 'JPY']]
+    by_sred_vzv = by_sred_vzv.rename({'srok': 'Срок', 'All': 'Итого'}, axis='index')
+    by_sred_vzv.index.names = ['Срок']
+    by_sred_vzv = by_sred_vzv.fillna(0)
+    by_sred_vzv = by_sred_vzv.round(2)
+    by_sred_vzv = by_sred_vzv.rename(index={'3-Долгосрочный': 'Долгосрочные', '1-Краткосрочный' : 'Краткосрочные' })
+    by_sred_vzv = by_sred_vzv.reset_index()
+
+    #В разбивке по средневзвешенной процентной ставке (Юридические лица)                                                                             
+    cursor.execute(Query.named_query_byweight_fl(), [report.id])
+    byweight_fl = []
+    for row in CursorByName(cursor):
+        byweight_fl.append(row)
+    byaverageweight_fl_df = pd.DataFrame(byweight_fl)
+    byaverageweight_fl_df['sum_credit'] = byaverageweight_fl_df['CREDIT_PROCENT'] * byaverageweight_fl_df['VSEGO_ZADOLJENNOST']
+    by_sred_vzv_fiz = pd.pivot_table(byaverageweight_fl_df, values='VSEGO_ZADOLJENNOST', index=['VID_KREDITOVANIYA'],
+                    columns=['VALUTE'], aggfunc=np.sum, fill_value=0, margins= True)
+
+    by_sred_vzv_fiz2 = pd.pivot_table(byaverageweight_fl_df, values='sum_credit', index=['VID_KREDITOVANIYA'],
+                    columns=['VALUTE'], aggfunc=np.sum, fill_value=0, margins= True)
+    
+    by_sred_vzv_fiz = by_sred_vzv_fiz2.div(by_sred_vzv_fiz).reset_index()
+    by_sred_vzv_fiz = pd.DataFrame(by_sred_vzv_fiz.to_records())
+    by_sred_vzv_fiz = by_sred_vzv_fiz.set_index('VID_KREDITOVANIYA')
+    by_sred_vzv_fiz = by_sred_vzv_fiz.drop(['index', 'All'], axis=1)
+    by_sred_vzv_fiz.index.names = ['Продукты']
+    new_index = ['32-Микрозаем', '59-Образовательный кредит', '54-Овердрафт по пластиковым карточкам физических лиц', '24-Ипотечный кредит',
+                '33-Кредиты, выданные по инициативе банка', '30-Потребительский кредит', '34-Автокредит', '25-Микрокредит', 'All']
+    by_sred_vzv_fiz = by_sred_vzv_fiz.reindex(new_index)
+    by_sred_vzv_fiz = by_sred_vzv_fiz.rename(index= {'32-Микрозаем' : 'Микрозаем', '59-Образовательный кредит' : 'Образовательный кредит', '54-Овердрафт по пластиковым карточкам физических лиц': 'Овердрафт по пластиковым карточкам физических лиц', '24-Ипотечный кредит' : 'Ипотечный кредит',
+                '33-Кредиты, выданные по инициативе банка' : 'Кредиты, выданные по инициативе банка', '30-Потребительский кредит' : 'Потребительский кредит', '34-Автокредит': 'Автокредит', '25-Микрокредит': 'Микрокредит', 'All':'Итого' })
+
+    by_sred_vzv_fiz =by_sred_vzv_fiz.fillna(0)
+    by_sred_vzv_fiz =by_sred_vzv_fiz.round(1)
+    by_sred_vzv_fiz = by_sred_vzv_fiz.reset_index()
+
+    dfs = {'Топ NPL': npls_df, 'Топ ТК': toxic_df, 'Топ проср': overdues_df, 'В разбивке по срокам': byterm_df, 
+        'В разбивке по субъектам': bysubjects_df, 'В разбивке по сегментам':bysegments_df, 'В разбивке по валютам': bycurrency_df, 
+        'В разбивке по филиалам':bybranches_df, 'В разбивке по проц став нац.в' : bypercentage_national_df, 
+        'В разбивке по проц став инстр.в' : bypercentage_foreign_df, 'В национальной валюте по ЮЛ': bypercentage_national_ul_df,
+        'В иностранной валюте по ЮЛ': bypercentage_foreign_ul_df, 'В разбивке по срднвзв прц ЮЛ': by_sred_vzv, 'В разбивке по срднвзв прц ФЛ': by_sred_vzv_fiz}
+   
     with BytesIO() as b:
         # Use the StringIO object as the filehandle.
         writer = pd.ExcelWriter(b, engine='xlsxwriter')
-        df.to_excel(writer, sheet_name='Sheet1')
+        for sheetname, df in dfs.items():  # loop through `dict` of dataframes
+            df.to_excel(writer, sheet_name=sheetname, index=False)  # send df to writer
+            workbook  = writer.book
+            worksheet = writer.sheets[sheetname]  # pull worksheet object
+            format = workbook.add_format({'text_wrap': True})
+            for idx, col in enumerate(npls_df):
+              # loop through all columns
+                series = npls_df[col]
+                max_len = max((
+                    series.astype(str).map(len).max(),  # len of largest item
+                    len(str(series.name))  # len of column name/header
+                    )) + 3  # adding a little extra space
+                worksheet.set_column(idx, idx, max_len, format)
         writer.save()
         writer.close()
         response = HttpResponse(b.getvalue(), content_type='application/vnd.ms-excel')
-        response["Content-Disposition"] = 'attachment; filename="Indicators.xlsx"'
+        response["Content-Disposition"] = 'attachment; filename="all_reports.xlsx"'
         return response
 
 def contracts(request):
