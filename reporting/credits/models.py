@@ -203,4 +203,4 @@ class ByRetailProduct(models.Model):
 class DataByGeocode(models.Model):
     Title       = models.CharField(max_length=255)
     GeoCode     = models.CharField(max_length=7)
-    Balance     = models.DecimalField(max_digits=12, decimal_places=0)
+    Balance     = models.FloatField()

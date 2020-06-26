@@ -93,8 +93,9 @@
         };
         
         for (var r = [], s = 10; 1 <= s; s--) r.push(s + " min ago");
-        var names = ["Andijon",
-           "Samarkand",
+        var names = [
+            "Andijon",
+            "Samarkand",
             "Khorezm",
             "Bukhoro",
             "Navoi",
@@ -107,12 +108,14 @@
             "Jizzakh",
             "Surkhandarya"
         ]
-        var gdpData = JSON.parse(document.getElementById("geo_data").value)[0];
+        var gdpData = JSON.parse(document.getElementById("geo_data").value);
+        var gdpName = JSON.parse(document.getElementById("geo_name").value);
         a = ["#727cf5", "#0acf97", "#fa5c7c", "#ffbc00"];
         (n = i("#country-chart").data("colors")) && (a = n.split(","));
         o = {
+            
             chart: {
-                height: 400,
+                height: 500,
                 type: "bar"
             },
             plotOptions: {
@@ -129,7 +132,7 @@
                 data: Object.values(gdpData)
             }],
             xaxis: {
-                categories: names,
+                categories: Object.values(gdpName),
                 axisBorder: {
                     show: !1
                 },
@@ -147,7 +150,7 @@
         var n;
     }, e.prototype.initMaps = function() {
 
-        var gdpData = JSON.parse(document.getElementById("geo_data").value)[0];
+        var gdpData = JSON.parse(document.getElementById("geo_data").value);
         
         console.log(gdpData[0])
         0 < i("#uzb-map-markers").length && i("#uzb-map-markers").vectorMap({

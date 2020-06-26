@@ -40,12 +40,11 @@ def index(request):
 
     
     
-    gdpData = [],
-    
-    gdp = DataByGeocode.objects.raw(Query.named_query_npls_by_branches(), [report.id])
-
-    for c in gdp:
-        gdpData.append(c)
+    gdpData = {}
+    gdpName = {}
+    for p in DataByGeocode.objects.raw(Query.named_query_npls_by_branches(), [report.id]):
+        gdpData[p.GeoCode] = p.Balance
+        gdpName[p.GeoCode] = p.Title
     
 
     statistics = {
@@ -68,7 +67,8 @@ def index(request):
         "statistics": statistics,
         "data_month": request.session['data_month'],
         "npls_page": "active",
-        "gdpData": json.dumps(gdpData)
+        "gdpData": json.dumps(gdpData),
+        "gdpName": json.dumps(gdpName),
     }
 
     return render(request, 'credits/index.html', context)

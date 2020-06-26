@@ -1102,7 +1102,7 @@ class Query():
                 GROUPS AS id,
                 TITLE AS Title,
                 GEOCODE AS GeoCode,
-                IFNULL(N.BALANS/1000000,0) AS Balance
+                CAST(IFNULL(N.BALANS/1000000,0) AS INTEGER) AS Balance
             FROM NPL_TABLE N
             ORDER BY GROUPS
         '''
