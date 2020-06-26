@@ -19,5 +19,6 @@ from . import settings
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('credits/', include('credits.urls'))
+    path('credits/', include('credits.urls')),
+    path('clients/', include('clients.urls'))
 ]
