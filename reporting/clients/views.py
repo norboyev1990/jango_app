@@ -11,3 +11,6 @@ def index(request):
         'table': table
     }
     return render(request, 'clients/index.html', context)
+
+def view(request):
+    return render(request, 'clients/view.html')
