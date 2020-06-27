@@ -1,5 +1,8 @@
 {% extends "includes/base.html" %} 
 {% load static %}
+{% load humanize %}
+{% load render_table from django_tables2 %}
+{% load querystring from django_tables2 %}
 
 {% block page_header %}
 
@@ -26,6 +29,7 @@
         <div class="col-lg-12">
             <div class="card">
                 <div class="card-body">
+
                     <div class="row mb-2">
                         <div class="col-lg-8">
                             <form class="form-inline">
@@ -34,15 +38,19 @@
                                     <input type="search" class="form-control" id="inputPassword2" placeholder="Search...">
                                 </div>
                                 <div class="form-group mx-sm-3 mb-2">
-                                    <label for="status-select" class="mr-2">Status</label>
-                                    <select class="custom-select" id="status-select">
-                                        <option selected="">Choose...</option>
-                                        <option value="1">Paid</option>
-                                        <option value="2">Awaiting Authorization</option>
-                                        <option value="3">Payment failed</option>
-                                        <option value="4">Cash On Delivery</option>
-                                        <option value="5">Fulfilled</option>
-                                        <option value="6">Unfulfilled</option>
+                                    <label for="status-select" class="mr-2">Тип клиента</label>
+                                    <select class="custom-select" id="status-select" onchange="select_client_type()">
+                                        <option selected="">Выберите...</option>
+                                        <option value="J">Юридический лица</option>
+                                        <option value="P">Физический лица</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mx-sm-4 mb-2">
+                                    <label for="branch-select" class="mr-2">Филиал</label>
+                                    <select class="custom-select" id="branch-select" onchange="select_branch()">
+                                        <option selected="">Выберите...</option>
+                                        <option value="1">Андижан</option>
+                                        <option value="2">Бухара</option>
                                     </select>
                                 </div>
                             </form>                            
@@ -54,140 +62,8 @@
                             </div>
                         </div><!-- end col-->
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-centered table-bordered mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Phone Number</th>
-                                    <th>Date of Birth</th>
-                                    <th>Active?</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Risa D. Pearson</td>
-                                    <td>336-508-2157</td>
-                                    <td>July 24, 1950</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch21" checked data-switch="success"/>
-                                            <label for="switch21" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Ann C. Thompson</td>
-                                    <td>646-473-2057</td>
-                                    <td>January 25, 1959</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch22" checked data-switch="success"/>
-                                            <label for="switch22" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Paul J. Friend</td>
-                                    <td>281-308-0793</td>
-                                    <td>September 1, 1939</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch23" data-switch="success"/>
-                                            <label for="switch23" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Ann C. Thompson</td>
-                                    <td>646-473-2057</td>
-                                    <td>January 25, 1959</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch22" checked data-switch="success"/>
-                                            <label for="switch22" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Paul J. Friend</td>
-                                    <td>281-308-0793</td>
-                                    <td>September 1, 1939</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch23" data-switch="success"/>
-                                            <label for="switch23" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Ann C. Thompson</td>
-                                    <td>646-473-2057</td>
-                                    <td>January 25, 1959</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch22" checked data-switch="success"/>
-                                            <label for="switch22" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Paul J. Friend</td>
-                                    <td>281-308-0793</td>
-                                    <td>September 1, 1939</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch23" data-switch="success"/>
-                                            <label for="switch23" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Ann C. Thompson</td>
-                                    <td>646-473-2057</td>
-                                    <td>January 25, 1959</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch22" checked data-switch="success"/>
-                                            <label for="switch22" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Paul J. Friend</td>
-                                    <td>281-308-0793</td>
-                                    <td>September 1, 1939</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch23" data-switch="success"/>
-                                            <label for="switch23" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Linda G. Smith</td>
-                                    <td>606-253-1207</td>
-                                    <td>May 3, 1962</td>
-                                    <td>
-                                        <!-- Switch-->
-                                        <div>
-                                            <input type="checkbox" id="switch24" data-switch="success"/>
-                                            <label for="switch24" data-on-label="Yes" data-off-label="No" class="mb-0 d-block"></label>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    
+                    {% render_table table %}
                 </div>
             </div>
         </div>
@@ -199,7 +75,9 @@
 
 {% block myscripts %}
 <script>
-    
+    select_client_type = function(e){
+        
+    }
 </script>
 
 {% endblock %}
