@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.db import connection
 from .queries import *
 from .models import *
 from .tables import *
@@ -11,3 +12,10 @@ def index(request):
         'table': table
     }
     return render(request, 'clients/index.html', context)
+
+def view(request, id):
+    client = Clients.objects.raw(Query.findClientByID(), [id])[0]
+    context = {
+        'client': client
+    }
+    return render(request, 'clients/view.html', context)
