@@ -904,6 +904,22 @@ def upload(request):
         'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
         'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
         'maliy_biznes', 'register_number', 'oked', 'code_contract']
+
+    InsertStr = '''
+        INSERT INTO CREDITS_REPORTDATA(NUMBER, CODE_REG, MFO, NAME_CLIENT, BALANS_SCHET, CREDIT_SCHET, DATE_RESHENIYA, CODE_VAL, 
+        SUM_DOG_NOM, SUM_DOG_EKV, DATE_DOGOVOR, DATE_FACTUAL, DATE_POGASH, SROK, DOG_NUMBER_DATE, CREDIT_PROCENT, PROSR_PROCENT, 
+        OSTATOK_CRED_SCHET, OSTATOK_PERESM, DATE_PRODL, DATE_POGASH_POSLE_PRODL, OSTATOK_PROSR, DATE_OBRAZ_PROS, OSTATOK_SUDEB, 
+        KOD_PRAVOXR_ORG, PRIZNAK_RESHENIYA, DATE_PRED_RESH, VSEGO_ZADOLJENNOST, CLASS_KACHESTVA, OSTATOK_REZERV, OSTATOK_NACH_PRCNT, 
+        OSTATOK_NACH_PROSR_PRCNT, OCENKA_OBESPECHENIYA, OBESPECHENIE, OPISANIE_OBESPECHENIE, ISTOCHNIK_SREDTSVO, VID_KREDITOVANIYA, 
+        PURPOSE_CREDIT, VISHEST_ORG_CLIENT, OTRASL_KREDITOVANIYA, OTRASL_CLIENTA, CLASS_KREDIT_SPOS, PREDSEDATEL_KB, ADRESS_CLIENT, 
+        UN_NUMBER_CONTRACT, INN_PASSPORT, OSTATOK_VNEB_PROSR, KONKR_NAZN_CREDIT, BORROWER_TYPE, SVYAZANNIY, MALIY_BIZNES, 
+        REGISTER_NUMBER, OKED, CODE_CONTRACT)
+        VALUES
+        (
+            173, '35', '00625', 'АБАТБАЕВА ЖУЛДЫЗ ЖМФ', '15501', '15501840804407961001', '1530-21.08.2017', '840', 15300.00, 145600461.00, 
+            '8/21/17', '8/21/17', '8/21/22', '3-Долгосрочный', '1530-21.08.2017', 0, 2.50, '97', '028', '908.52   "', '', '', '', '', '', '', '', '', '', '" 97', '028', '908.52   "', '1-Стандартный', '', '', '', 0, '360', '276.60   "', '24-Оборудование', '"Аппарат тракционный BTL 16 Plus - ЧФ ""Абатбаева Жулдыз"""', '35-Другие фонды и финан', '"21-Кредиты', ' выданные без открытия кредитной линии"', '"030604-Кредиты на приобретение техники', ' оборудования и транспортных средств в отрасли малого бизнеса"', '"(79994) Субъекты предпринимательства', ' не вошедшие в структуры органов государственного и хозяйственного управления"', '91510-Лечебно-профилактические учреждения', '91550- Прочая деятельность по охране здоровья человека', 'I КЛАСС', 0, '"Нокис рн Акмангит поселкасы Акмангыт гузары', '18"'
+        );
+    '''
     
     #data = data[:]
     for index, row in data.iterrows():
@@ -964,6 +980,87 @@ def upload(request):
             OKED = row['oked'],
             CODE_CONTRACT = row['code_contract'],
             REPORT=c)
+
+def upload_excel(request):
+    data = pd.read_excel (r'media/excel/january.xlsx', 
+        dtype={"NN":'int32', "МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str'})
+    data.columns = [
+        'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 
+        'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
+        'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
+        'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
+        'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 
+        'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
+        'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
+        'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 
+        'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
+        'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
+        'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
+        'maliy_biznes', 'register_number', 'oked', 'code_contract']
+
+    objs = []
+    for index, row in data.iterrows():
+        objs.append(
+            TempData.objects.create(
+                NUMBER                 = row['number'],
+                CODE_REG                = row['code_reg'], 
+                MFO                     = row['mfo'],
+                NAME_CLIENT             = row['name_client'], 
+                BALANS_SCHET            = row['balans_schet'], 
+                CREDIT_SCHET            = row['credit_schet'], 
+                CODE_VAL                = row['code_val'],
+                DATE_RESHENIYA          = row['date_resheniya'],
+                SUM_DOG_NOM             = row['sum_dog_nom'], 
+                SUM_DOG_EKV             = row['sum_dog_ekv'], 
+                DATE_DOGOVOR            = row['date_dogovor'], 
+                DATE_FACTUAL            = row['date_factual'], 
+                DATE_POGASH             = row['date_pogash'], 
+                SROK                    = row['srok'],
+                DOG_NUMBER_DATE         = row['dog_number_date'], 
+                CREDIT_PROCENT          = row['credit_procent'],
+                PROSR_PROCENT           = row['prosr_procent'], 
+                OSTATOK_CRED_SCHET      = row['ostatok_cred_schet'],
+                OSTATOK_PERESM          = row['ostatok_peresm'], 
+                DATE_PRODL              = row['date_prodl'],
+                DATE_POGASH_POSLE_PRODL = row['date_pogash_posle_prodl'],
+                OSTATOK_PROSR           = row['ostatok_prosr'], 
+                DATE_OBRAZ_PROS         = row['date_obraz_pros'], 
+                OSTATOK_SUDEB           = row['ostatok_sudeb'],
+                KOD_PRAVOXR_ORG         = row['kod_pravoxr_org'], 
+                PRIZNAK_RESHENIYA       = row['priznak_resheniya'], 
+                DATE_PRED_RESH          = row['date_pred_resh'], 
+                VSEGO_ZADOLJENNOST      = row['vsego_zadoljennost'], 
+                CLASS_KACHESTVA         = row['class_kachestva'], 
+                OSTATOK_REZERV          = row['ostatok_rezerv'], 
+                OSTATOK_NACH_PRCNT      = row['ostatok_nach_prcnt'], 
+                OSTATOK_NACH_PROSR_PRCNT= row['ostatok_nach_prosr_prcnt'], 
+                OCENKA_OBESPECHENIYA    = row['ocenka_obespecheniya'], 
+                OBESPECHENIE            = row['obespechenie'], 
+                OPISANIE_OBESPECHENIE   = row['opisanie_obespechenie'],
+                ISTOCHNIK_SREDTSVO      = row['istochnik sredtsvo'], 
+                VID_KREDITOVANIYA       = row['vid_kreditovaniya'],  
+                PURPOSE_CREDIT          = row['purpose_credit'], 
+                VISHEST_ORG_CLIENT      = row['vishest_org_client'],
+                OTRASL_KREDITOVANIYA    = row['otrasl_kreditovaniya'], 
+                OTRASL_CLIENTA          = row['otrasl_clienta'], 
+                CLASS_KREDIT_SPOS       = row['class_kredit_spos'], 
+                PREDSEDATEL_KB          = row['predsedatel_kb'],
+                ADRESS_CLIENT           = row['adress_client'], 
+                UN_NUMBER_CONTRACT      = row['un_number_contract'], 
+                INN_PASSPORT            = row['inn_passport'], 
+                OSTATOK_VNEB_PROSR      = row['ostatok_vneb_prosr'], 
+                KONKR_NAZN_CREDIT       = row['konkr_nazn_credit'],
+                BORROWER_TYPE           = row['borrower_type'], 
+                SVYAZANNIY              = row['svyazanniy'], 
+                MALIY_BIZNES            = row['maliy_biznes'], 
+                REGISTER_NUMBER         = row['register_number'], 
+                OKED                    = row['oked'],
+                CODE_CONTRACT           = row['code_contract'],
+                MONTH_CODE=1
+            )
+        )
+    TempData.objects.bulk_create(objs)
+    print("HELLO WORLD") 
 
 def test_export(request):
     if (request.POST.get('data_month')):

@@ -28,6 +28,7 @@ urlpatterns = [
     path('contracts/', views.contracts, name='contract-list'),
     path('contracts/<int:id>/', views.contract_detail, name='contract-detail'),
     path('upload/', views.upload, name='upload'),
+    path('uploadex/', views.upload_excel, name='upload-excel'),
     path('export/', views.test_export, name='export'),
     path('client_page/', views.client_page, name='client_page'),
     

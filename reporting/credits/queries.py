@@ -1123,7 +1123,7 @@ class Query():
                 R.ID AS id, 
                 B.NAME AS Title,
                 B.GEOCODE AS GeoCode,  
-                SUM(OSTATOK_PROSR)/1000000 AS Balance
+                IFNULL(SUM(OSTATOK_PROSR)/1000000,0) AS Balance
             FROM CREDITS_REPORTDATA R
             LEFT JOIN CREDITS_BRANCH B ON B.CODE = R.MFO
             WHERE R.REPORT_ID = %s
