@@ -1,0 +1,51 @@
+{% extends "includes/base.html" %} 
+{% load static %}
+{% load humanize %}
+{% load render_table from django_tables2 %}
+{% load querystring from django_tables2 %}
+
+{% block page_header %}
+
+{% endblock %} 
+
+{% block page_container %}
+
+<div class="container-fluid">
+
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    
+                </div>
+                <h4 class="page-title">Клиенты</h4>
+            </div>
+        </div>
+    </div>
+    <!-- end page title -->
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <a href="{% url 'export_all_docx' %}" class="btn btn-sm btn-link float-left mb-3">Export
+                        <i class="mdi mdi-download ml-1"></i>
+                    </a> 
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end row -->
+   
+</div>
+{% endblock %}
+
+{% block myscripts %}
+<script>
+    select_client_type = function(e){
+        
+    }
+</script>
+
+{% endblock %}

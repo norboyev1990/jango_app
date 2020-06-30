@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['127.0.0.1']
 INSTALLED_APPS = [
     'credits.apps.CreditsConfig',
     'clients.apps.ClientsConfig',
+    'export_docx.apps.ExportDocxConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -40,7 +41,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'django_tables2',
-    
 ]
 
 MIDDLEWARE = [
