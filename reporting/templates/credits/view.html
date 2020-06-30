@@ -15,9 +15,11 @@
                     <form id="formPreviewMonth" class="form-inline" action="{{ request.get_full_path }}" method="POST">
                         {% csrf_token %} 
                         <input name="data_month" onchange="myFunction()" type="month" class="form-control form-control-light" value="{{ data_month }}">
-                        <a href="{% url 'export-all-tables' %}" class="btn btn-info ml-2">
-                            <i class="mdi mdi-download"></i> Download all
-                        </a>
+                        <button type="button" class="btn btn-light dropdown-toggle"  style = "margin-left: 5px;"  data-toggle="dropdown" aria-expanded="false"> Export<span class="caret"></span> </button>
+                        <div class="dropdown-menu" style="">
+                            <a class="dropdown-item" href="{% url 'export-all-tables' %}">Excel</a>
+                            <a class="dropdown-item" href="{% url 'export_all_docx' %}">Word</a>
+                        </div>
                     </form>
                 </div>
                 <h4 class="page-title text-uppercase">Кредитный портфель</h4>
@@ -43,7 +45,7 @@
                                     {% if npls_page or toxics_page or overdues_page %}
                                     <div class="col-auto">
                                         <div class="dropdown">
-                                            <button class="btn btn-warning dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <button class="btn btn-outline-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                 Показать: {% if 'tp' in request.GET %} Топ {{request.GET.tp}} {% else %} Все {% endif %}
                                             </button>
                                             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
@@ -57,7 +59,7 @@
                                         </div>
                                     </div>
                                     {%endif%}
-                                    <a class="btn btn-success mb-2" href="{% querystring '_export'='xlsx' %}">Скачать XLSX</a>
+                                    <a class="btn btn-outline-success mb-2" href="{% querystring '_export'='xlsx' %}">Скачать XLSX</a>
                                 </div>
                                 
                             </div><!-- end col-->
