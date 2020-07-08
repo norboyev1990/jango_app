@@ -1,8 +1,8 @@
 *.swp
+*.xlsx
+*.sqlite3
 __pycache__/
 
 env
 test
 temp.html
-db.sqlite3
-excel/
