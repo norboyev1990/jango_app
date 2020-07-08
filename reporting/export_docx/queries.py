@@ -23,7 +23,6 @@ class Query():
                 OR SUM(OSTATOK_VNEB_PROSR) IS NOT NULL 
             ORDER BY BALANS DESC
         '''
-
     def named_query_toxics():
         return '''
             SELECT R.ID, 

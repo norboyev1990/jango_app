@@ -1,4 +1,7 @@
 from django.db import models
+from .queries import Query
+from django.db import connection
+from datetime import datetime
 
 # Create your models here.
 class ListReports(models.Model):
@@ -13,9 +16,10 @@ class ListReports(models.Model):
 
 class ReportData(models.Model):
     REPORT = models.ForeignKey(ListReports, related_name="REPORT", on_delete=models.CASCADE, null=True)
-    NUMBER                  = models.IntegerField(null=True)
+    NUMBERS                 = models.IntegerField(null=True)
     CODE_REG                = models.CharField(max_length=25)
     MFO                     = models.CharField(max_length=5)
+    RAYON_PODACHI           = models.CharField(max_length=255, null=True)
     NAME_CLIENT             = models.CharField(max_length=255)
     BALANS_SCHET            = models.CharField(max_length=20, null=True)
     CREDIT_SCHET            = models.CharField(max_length=20)
@@ -37,11 +41,12 @@ class ReportData(models.Model):
     OSTATOK_PROSR           = models.FloatField(null=True)
     DATE_OBRAZ_PROS         = models.DateField(null=True)
     OSTATOK_SUDEB           = models.FloatField(null=True)
+    DATE_SUDEB              = models.DateField(null=True)
     KOD_PRAVOXR_ORG         = models.CharField(max_length=255)
     PRIZNAK_RESHENIYA       = models.CharField(max_length=255)
-    DATE_PRED_RESH          = models.CharField(max_length=25)
+    DATE_PRED_RESH          = models.CharField(max_length=45)
     VSEGO_ZADOLJENNOST      = models.FloatField(null=True)
-    CLASS_KACHESTVA         = models.CharField(max_length=25)
+    CLASS_KACHESTVA         = models.CharField(max_length=45)
     OSTATOK_REZERV          = models.FloatField(null=True)
     OSTATOK_NACH_PRCNT      = models.FloatField(null=True)
     OSTATOK_NACH_PROSR_PRCNT= models.FloatField(null=True)
@@ -49,6 +54,7 @@ class ReportData(models.Model):
     OBESPECHENIE            = models.CharField(max_length=255)
     OPISANIE_OBESPECHENIE   = models.CharField(max_length=255)
     ISTOCHNIK_SREDTSVO      = models.CharField(max_length=255)
+    ZARUBEJNIY_BANK         = models.CharField(max_length=255, null=True)
     VID_KREDITOVANIYA       = models.CharField(max_length=255)
     PURPOSE_CREDIT          = models.CharField(max_length=255)
     VISHEST_ORG_CLIENT      = models.CharField(max_length=255)
@@ -58,22 +64,38 @@ class ReportData(models.Model):
     PREDSEDATEL_KB          = models.CharField(max_length=255)
     ADRESS_CLIENT           = models.CharField(max_length=255)
     UN_NUMBER_CONTRACT      = models.CharField(max_length=255)
-    INN_PASSPORT            = models.CharField(max_length=25)
+    INN_PASSPORT            = models.CharField(max_length=45)
     OSTATOK_VNEB_PROSR      = models.FloatField(null=True)
     KONKR_NAZN_CREDIT       = models.CharField(max_length=255)
     BORROWER_TYPE           = models.CharField(max_length=255)
     SVYAZANNIY              = models.IntegerField(null=True)
     MALIY_BIZNES            = models.IntegerField(null=True)
-    REGISTER_NUMBER         = models.CharField(max_length=255)
+    REGISTER_NUMBER         = models.CharField(max_length=1000)
     OKED                    = models.CharField(max_length=255)
     CODE_CONTRACT           = models.CharField(max_length=255)
     def __str__(self):
         return self.NAME_CLIENT
 
+class MyManager(models.Manager):
+
+    def create_in_bulk(self, values):
+        values_sql = []
+        values_data = []
+        for value_list in values.values.tolist():
+            values_sql.append(Query.named_query_insert())
+            values_data.extend(value_list)
+            myvalues = ', '.join('"{0}"'.format(w) for w in value_list)
+
+        head_sql = 'INSERT ALL %s SELECT * FROM DUAL'
+        sql = head_sql % ' '.join(values_sql)
+        curs = connection.cursor()
+        # curs.execute(sql,values_data)
+        return myvalues
 class TempData(models.Model):
-    NUMBER                 = models.CharField(max_length=255)
+    NUMBERS                 = models.CharField(max_length=255)
     CODE_REG                = models.CharField(max_length=255)
     MFO                     = models.CharField(max_length=255)
+    RAYON_PODACHI           = models.CharField(max_length=255,  null=True)
     NAME_CLIENT             = models.CharField(max_length=255)
     BALANS_SCHET            = models.CharField(max_length=255)
     CREDIT_SCHET            = models.CharField(max_length=255)
@@ -95,6 +117,7 @@ class TempData(models.Model):
     OSTATOK_PROSR           = models.CharField(max_length=255)
     DATE_OBRAZ_PROS         = models.CharField(max_length=255)
     OSTATOK_SUDEB           = models.CharField(max_length=255)
+    DATE_SUDEB              = models.CharField(max_length=255,  null=True)
     KOD_PRAVOXR_ORG         = models.CharField(max_length=255)
     PRIZNAK_RESHENIYA       = models.CharField(max_length=255)
     DATE_PRED_RESH          = models.CharField(max_length=255)
@@ -107,6 +130,7 @@ class TempData(models.Model):
     OBESPECHENIE            = models.CharField(max_length=255)
     OPISANIE_OBESPECHENIE   = models.CharField(max_length=255)
     ISTOCHNIK_SREDTSVO      = models.CharField(max_length=255)
+    ZARUBEJNIY_BANK         = models.CharField(max_length=255, null=True)
     VID_KREDITOVANIYA       = models.CharField(max_length=255)
     PURPOSE_CREDIT          = models.CharField(max_length=255)
     VISHEST_ORG_CLIENT      = models.CharField(max_length=255)
@@ -122,12 +146,13 @@ class TempData(models.Model):
     BORROWER_TYPE           = models.CharField(max_length=255)
     SVYAZANNIY              = models.CharField(max_length=255)
     MALIY_BIZNES            = models.CharField(max_length=255)
-    REGISTER_NUMBER         = models.CharField(max_length=255)
+    REGISTER_NUMBER         = models.CharField(max_length=1000)
     OKED                    = models.CharField(max_length=255)
     CODE_CONTRACT           = models.CharField(max_length=255)
-    MONTH_CODE           = models.IntegerField(null=True)
+    MONTH_CODE              = models.IntegerField(null=True)
     def __str__(self):
         return self.NAME_CLIENT
+
 
 class Branch(models.Model):
     CODE = models.CharField(max_length=5, db_index=True)
@@ -174,7 +199,7 @@ class Segment(models.Model):
         return self.CODE + ' - ' + self.NAME
 
 class NplClients(models.Model):
-    Number = models.IntegerField(verbose_name="№")
+    Number = models.IntegerField(db_column="Numeral", verbose_name="№")
     Name   = models.CharField(max_length=255, verbose_name="Наименование заёмщика")
     Branch = models.CharField(max_length=255, verbose_name="Филиал")
     Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток кредита")
@@ -182,7 +207,7 @@ class NplClients(models.Model):
         managed  = False
 
 class ToxicCredits(models.Model):
-    Number = models.IntegerField(verbose_name="№")
+    Number = models.IntegerField(db_column="Numeral", verbose_name="№")
     Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
     Branch = models.CharField(max_length=255, verbose_name="Филиал")
     Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток р/с 16377")
@@ -190,31 +215,36 @@ class ToxicCredits(models.Model):
         managed  = False
 
 class OverdueCredits(models.Model):
-    Number = models.IntegerField(verbose_name="№")
+    Number = models.IntegerField(db_column="Numeral", verbose_name="№")
     Name   = models.CharField(max_length=255, verbose_name="Наименование клиента")
     Branch = models.CharField(max_length=255, verbose_name="Филиал")
     Balans = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Остаток р/с 16377")
     class Meta:
         managed  = False
 
+class InfoCredits(models.Model):
+    Title      = models.CharField(max_length=255, verbose_name="Показатели")
+    Old_Value  = models.CharField(max_length=255, verbose_name="Предыдущий  месяц")
+    New_Value  = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Текущий месяц",)
+    Updates    = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Изменение")
+    Percent    = models.DecimalField(max_digits=12, decimal_places=2, verbose_name="Изменение, %")
+    def get_old_value(self):
+        return self.Old_Value if self.id not in [3,5,8,10] else '{}%'.format(self.Old_Value)
+    def get_new_value(self):
+        return self.New_Value if self.id not in [3,5,8,10] else '{}%'.format(self.New_Value)
+    class Meta:
+        managed  = False
+
 class ByTerms(models.Model):
-    Title     = models.CharField(max_length=255, verbose_name="Сроки")
-    PorBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Кредитный портфель")
-    PorPercent= models.DecimalField(max_digits=12, decimal_places=1, verbose_name="Доля")
-    NplBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="NPL")
-    ToxBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Токсичные кредиты")
-    ResBalans = models.DecimalField(max_digits=12, decimal_places=0, verbose_name="Резервы")
-
-    def amount_npl_toxic(self):
-        return self.NplBalans + self.ToxBalans
-
-    def weight_npl_toxic(self):
-        return '{:.1%}'.format((self.NplBalans+self.ToxBalans)/self.PorBalans)
-
-    def reserve_cover(self):
-        return '{:.1%}'.format(self.ResBalans/(self.NplBalans+self.ToxBalans))
-
-
+    Title       = models.CharField(verbose_name="Сроки", max_length=255)
+    PorBalans   = models.FloatField(verbose_name="Кредитный портфель")
+    PorPercent  = models.FloatField(verbose_name="Доля, %")
+    NplBalans   = models.FloatField(verbose_name="NPL")
+    ToxBalans   = models.FloatField(verbose_name="Токсичные кредиты")
+    AmountNTK   = models.FloatField(verbose_name="ТК+NPL")
+    WeightNTK   = models.FloatField(verbose_name="Удельный вес")
+    ResBalans   = models.FloatField(verbose_name="Резервы")
+    ResCovers   = models.FloatField(verbose_name="Покрытие резервами")
     class Meta:
         managed  = False
 

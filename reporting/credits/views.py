@@ -21,7 +21,7 @@ from django_pandas.io import read_frame
 def setReviewMonthInSession(request):
     if (request.POST.get('data_month')):
         request.session['data_month'] = request.POST.get('data_month')
-        return HttpResponseRedirect(request.path_info)
+        HttpResponseRedirect(request.path_info)
     
     if 'data_month' not in request.session:
         request.session['data_month'] = '2020-04'      
@@ -31,7 +31,7 @@ def index(request):
 
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
-
+    
     cursor = connection.cursor()
     cursor.execute(Query.named_query_indicators(), {'month2':sMonth.month, 'month1':sMonth.month-1})
     data = [2]
@@ -92,7 +92,7 @@ def npls(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     
     top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
-    table = NplClientsTable(NplClients.objects.raw(Query.named_query_npls(), [report.id])[:top])
+    table = NplClientsTable(NplClients.objects.raw(Query.orcl_npls(), [report.id])[:top])
     table.paginate(page=request.GET.get("page", 1), per_page=10) 
     
     export_format = request.GET.get("_export", None)
@@ -116,7 +116,7 @@ def toxics(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
     top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
-    table = ToxicCreditsTable(ToxicCredits.objects.raw(Query.named_query_toxics(), [report.id])[:top])
+    table = ToxicCreditsTable(ToxicCredits.objects.raw(Query.orcl_toxics(), [report.id])[:top])
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
     
     export_format = request.GET.get("_export", None)
@@ -139,7 +139,7 @@ def overdues(request):
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
     
     top = int(request.GET.get('tp')) if request.GET.get('tp') else 9999999
-    table = OverdueCreditsTable(OverdueCredits.objects.raw(Query.named_query_overdues(), [report.id])[:top])
+    table = OverdueCreditsTable(OverdueCredits.objects.raw(Query.orcl_overdues(), [report.id])[:top])
     table.paginate(page=request.GET.get("page", 1), per_page=10)            
     
     export_format = request.GET.get("_export", None)
@@ -159,37 +159,9 @@ def overdues(request):
 def indicators(request):
     setReviewMonthInSession(request)
     sMonth = pd.to_datetime(request.session['data_month'])
-
-    cursor = connection.cursor()
-    cursor.execute(Query.named_query_indicators(), {'month2':sMonth.month, 'month1':sMonth.month-1})
-    data = [2]
-    for row in CursorByName(cursor):
-        data.append(row)
-
-    listCreditPortfolio = [
-            {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
-            {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT'],     "flag": True},
-            {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT'],   "flag": True},
-            {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
-            {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
-            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING'],"flag": True},
-            {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT'], "flag": True},
-        ]
-            
-    for item in listCreditPortfolio:
-        val1 = item['old_value']
-        val2 = item['new_value']
-        flag = 'flag' in item.keys()
-        item['old_value']  = '{:.1%}'.format(val1) if flag else int(val1 / 1000000)
-        item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
-        item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
-        item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
-    
-    table = OverallInfoTable(listCreditPortfolio)
-    table.paginate(page=request.GET.get("page", 1), per_page=10)            
+    report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
+    mylist = InfoCredits.objects.raw('SELECT ROWNUM as id, T.* FROM TABLE(GET_INDS(%s)) T', [sMonth])
+    table = InfoCreditsTable(mylist)
     
     export_format = request.GET.get("_export", None)
     if TableExport.is_valid_format(export_format):
@@ -210,7 +182,7 @@ def byterms(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    data = ByTerms.objects.raw(Query.named_query_byterms(), [report.id, report.id])
+    data = ByTerms.objects.raw(Query.orcl_byterms(), [report.id])
     table = ByTermsTable(data)
 
     export_format = request.GET.get("_export", None)
@@ -232,7 +204,7 @@ def bysubjects(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    data = ByTerms.objects.raw(Query.named_query_bysubjects(), [report.id, report.id])
+    data = ByTerms.objects.raw(Query.orcl_bysubjects(), [report.id])
     table = ByTermsTable(data)
 
     export_format = request.GET.get("_export", None)
@@ -254,7 +226,7 @@ def bysegments(request):
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
 
-    data = ByTerms.objects.raw(Query.named_query_bysegments(), [report.id, report.id])
+    data = ByTerms.objects.raw(Query.orcl_bysegments(), [report.id])
     table = ByTermsTable(data)
 
     export_format = request.GET.get("_export", None)
@@ -275,7 +247,7 @@ def bycurrency(request):
     setReviewMonthInSession(request)
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
-    data = ByTerms.objects.raw(Query.named_query_bycurrency(), [report.id, report.id])
+    data = ByTerms.objects.raw(Query.orcl_bycurrency(), [report.id])
     table = ByTermsTable(data)
 
     export_format = request.GET.get("_export", None)
@@ -294,7 +266,7 @@ def bybranches(request):
     setReviewMonthInSession(request)
     sMonth = pd.to_datetime(request.session['data_month'])
     report = ListReports.objects.get(REPORT_MONTH=sMonth.month, REPORT_YEAR=sMonth.year)
-    data = ByTerms.objects.raw(Query.named_query_bybranches(), [report.id, report.id])
+    data = ByTerms.objects.raw(Query.orcl_bybranches(), [report.id])
     table = ByTermsTable(data)
     table.paginate(page=request.GET.get("page", 1), per_page=10)
 
@@ -864,28 +836,6 @@ def export_all_tables(request):
         response["Content-Disposition"] = 'attachment; filename="all_reports.xlsx"'
         return response
 
-def contracts(request):
-    setReviewMonthInSession(request)
-    table = ContractListTable(ReportData.objects.raw(Query.named_query_contracts()))
-    table.paginate(page=request.GET.get("page", 1), per_page=10)
-    context = {
-        "page_title" : "Договора",
-        "data_table" : table,
-        "data_month" : request.session['data_month'],
-        "contracts_page" : "active",
-
-    }
-
-    return render(request, 'credits/contract-list.html', context)
-
-def contract_detail(request):
-    setReviewMonthInSession(request)
-    return render(request, 'credits/index.html')
-
-def search(request):
-    setReviewMonthInSession(request)
-    return render(request, 'credits/index.html')
-
 def upload(request):
     c = ListReports.objects.create(REPORT_TITLE="JANUARY, 2020", REPORT_MONTH=1, REPORT_YEAR=2020, DATE_CREATED=datetime.now())
     
@@ -982,8 +932,11 @@ def upload(request):
             REPORT=c)
 
 def upload_excel(request):
+    start = datetime.now()
     data = pd.read_excel (r'media/excel/january.xlsx', 
-        dtype={"NN":'int32', "МФО": 'str', 'КодРег': 'str', 'БалансСчет':'str', 'КодВал': 'str', 'ИНН/Паспорт': 'str'})
+        dtype=str)
+
+    data = data.fillna('')
     data.columns = [
         'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 
         'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
@@ -998,120 +951,109 @@ def upload_excel(request):
         'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
         'maliy_biznes', 'register_number', 'oked', 'code_contract']
 
+    # data.columns = [
+    #     'number', 'code_reg', 'mfo', 'rayon_podachi', 'name_client', 'balans_schet', 'credit_schet', 
+    #     'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
+    #     'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
+    #     'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
+    #     'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'date_sudeb',
+    #     'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
+    #     'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
+    #     'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'zarubejniy_bank',
+    #     'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
+    #     'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
+    #     'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
+    #     'maliy_biznes', 'register_number', 'oked', 'code_contract']
+    
+    cursor = connection.cursor()
+    cursor.execute("select IFNULL(max(id),0) from CREDITS_TEMPDATA")
+    maxID = cursor.fetchone()[0]+1
+    data.insert(0, 'MONTH_CODE', 1)
+    data.insert(0, 'ID', range(maxID, maxID + len(data)))
+    
+        
     objs = []
     for index, row in data.iterrows():
+        tmp = row
         objs.append(
             TempData.objects.create(
-                NUMBER                 = row['number'],
-                CODE_REG                = row['code_reg'], 
-                MFO                     = row['mfo'],
-                NAME_CLIENT             = row['name_client'], 
-                BALANS_SCHET            = row['balans_schet'], 
-                CREDIT_SCHET            = row['credit_schet'], 
-                CODE_VAL                = row['code_val'],
-                DATE_RESHENIYA          = row['date_resheniya'],
-                SUM_DOG_NOM             = row['sum_dog_nom'], 
-                SUM_DOG_EKV             = row['sum_dog_ekv'], 
-                DATE_DOGOVOR            = row['date_dogovor'], 
-                DATE_FACTUAL            = row['date_factual'], 
-                DATE_POGASH             = row['date_pogash'], 
-                SROK                    = row['srok'],
-                DOG_NUMBER_DATE         = row['dog_number_date'], 
-                CREDIT_PROCENT          = row['credit_procent'],
-                PROSR_PROCENT           = row['prosr_procent'], 
-                OSTATOK_CRED_SCHET      = row['ostatok_cred_schet'],
-                OSTATOK_PERESM          = row['ostatok_peresm'], 
-                DATE_PRODL              = row['date_prodl'],
+                id                  = row['ID'],
+                MONTH_CODE          = row['MONTH_CODE'],
+                NUMBERS             = row['number'],
+                CODE_REG            = row['code_reg'], 
+                MFO                 = row['mfo'],
+                NAME_CLIENT         = row['name_client'], 
+                BALANS_SCHET        = row['balans_schet'], 
+                CREDIT_SCHET        = row['credit_schet'], 
+                CODE_VAL            = row['code_val'],
+                DATE_RESHENIYA      = row['date_resheniya'],
+                SUM_DOG_NOM         = row['sum_dog_nom'], 
+                SUM_DOG_EKV         = row['sum_dog_ekv'], 
+                DATE_DOGOVOR        = row['date_dogovor'], 
+                DATE_FACTUAL        = row['date_factual'], 
+                DATE_POGASH         = row['date_pogash'], 
+                SROK                = row['srok'],
+                DOG_NUMBER_DATE     = row['dog_number_date'], 
+                CREDIT_PROCENT      = row['credit_procent'],
+                PROSR_PROCENT       = row['prosr_procent'], 
+                OSTATOK_CRED_SCHET  = row['ostatok_cred_schet'],
+                OSTATOK_PERESM      = row['ostatok_peresm'], 
+                DATE_PRODL          = row['date_prodl'],
                 DATE_POGASH_POSLE_PRODL = row['date_pogash_posle_prodl'],
-                OSTATOK_PROSR           = row['ostatok_prosr'], 
-                DATE_OBRAZ_PROS         = row['date_obraz_pros'], 
-                OSTATOK_SUDEB           = row['ostatok_sudeb'],
-                KOD_PRAVOXR_ORG         = row['kod_pravoxr_org'], 
-                PRIZNAK_RESHENIYA       = row['priznak_resheniya'], 
-                DATE_PRED_RESH          = row['date_pred_resh'], 
-                VSEGO_ZADOLJENNOST      = row['vsego_zadoljennost'], 
-                CLASS_KACHESTVA         = row['class_kachestva'], 
-                OSTATOK_REZERV          = row['ostatok_rezerv'], 
-                OSTATOK_NACH_PRCNT      = row['ostatok_nach_prcnt'], 
-                OSTATOK_NACH_PROSR_PRCNT= row['ostatok_nach_prosr_prcnt'], 
-                OCENKA_OBESPECHENIYA    = row['ocenka_obespecheniya'], 
-                OBESPECHENIE            = row['obespechenie'], 
-                OPISANIE_OBESPECHENIE   = row['opisanie_obespechenie'],
-                ISTOCHNIK_SREDTSVO      = row['istochnik sredtsvo'], 
-                VID_KREDITOVANIYA       = row['vid_kreditovaniya'],  
-                PURPOSE_CREDIT          = row['purpose_credit'], 
-                VISHEST_ORG_CLIENT      = row['vishest_org_client'],
-                OTRASL_KREDITOVANIYA    = row['otrasl_kreditovaniya'], 
-                OTRASL_CLIENTA          = row['otrasl_clienta'], 
-                CLASS_KREDIT_SPOS       = row['class_kredit_spos'], 
-                PREDSEDATEL_KB          = row['predsedatel_kb'],
-                ADRESS_CLIENT           = row['adress_client'], 
-                UN_NUMBER_CONTRACT      = row['un_number_contract'], 
-                INN_PASSPORT            = row['inn_passport'], 
-                OSTATOK_VNEB_PROSR      = row['ostatok_vneb_prosr'], 
-                KONKR_NAZN_CREDIT       = row['konkr_nazn_credit'],
-                BORROWER_TYPE           = row['borrower_type'], 
-                SVYAZANNIY              = row['svyazanniy'], 
-                MALIY_BIZNES            = row['maliy_biznes'], 
-                REGISTER_NUMBER         = row['register_number'], 
-                OKED                    = row['oked'],
-                CODE_CONTRACT           = row['code_contract'],
-                MONTH_CODE=1
+                OSTATOK_PROSR       = row['ostatok_prosr'], 
+                DATE_OBRAZ_PROS     = row['date_obraz_pros'], 
+                OSTATOK_SUDEB       = row['ostatok_sudeb'],
+                KOD_PRAVOXR_ORG     = row['kod_pravoxr_org'], 
+                PRIZNAK_RESHENIYA   = row['priznak_resheniya'], 
+                DATE_PRED_RESH      = row['date_pred_resh'], 
+                VSEGO_ZADOLJENNOST  = row['vsego_zadoljennost'], 
+                CLASS_KACHESTVA     = row['class_kachestva'], 
+                OSTATOK_REZERV      = row['ostatok_rezerv'], 
+                OSTATOK_NACH_PRCNT  = row['ostatok_nach_prcnt'], 
+                OSTATOK_NACH_PROSR_PRCNT    = row['ostatok_nach_prosr_prcnt'], 
+                OCENKA_OBESPECHENIYA        = row['ocenka_obespecheniya'], 
+                OBESPECHENIE                = row['obespechenie'], 
+                OPISANIE_OBESPECHENIE       = row['opisanie_obespechenie'],
+                ISTOCHNIK_SREDTSVO          = row['istochnik sredtsvo'], 
+                VID_KREDITOVANIYA           = row['vid_kreditovaniya'],  
+                PURPOSE_CREDIT              = row['purpose_credit'], 
+                VISHEST_ORG_CLIENT          = row['vishest_org_client'],
+                OTRASL_KREDITOVANIYA        = row['otrasl_kreditovaniya'], 
+                OTRASL_CLIENTA              = row['otrasl_clienta'], 
+                CLASS_KREDIT_SPOS           = row['class_kredit_spos'], 
+                PREDSEDATEL_KB              = row['predsedatel_kb'],
+                ADRESS_CLIENT               = row['adress_client'], 
+                UN_NUMBER_CONTRACT          = row['un_number_contract'], 
+                INN_PASSPORT                = row['inn_passport'], 
+                OSTATOK_VNEB_PROSR          = row['ostatok_vneb_prosr'], 
+                KONKR_NAZN_CREDIT           = row['konkr_nazn_credit'],
+                BORROWER_TYPE               = row['borrower_type'], 
+                SVYAZANNIY                  = row['svyazanniy'], 
+                MALIY_BIZNES                = row['maliy_biznes'], 
+                REGISTER_NUMBER             = row['register_number'], 
+                OKED                        = row['oked'],
+                CODE_CONTRACT               = row['code_contract'],
+                # RAYON_PODACHI               = row['rayon_podachi'],
+                # DATE_SUDEB                  = row['date_sudeb'],
+                # ZARUBEJNIY_BANK             = row['zarubejniy_bank']
             )
         )
-    TempData.objects.bulk_create(objs)
-    print("HELLO WORLD") 
-
-def test_export(request):
-    if (request.POST.get('data_month')):
-        request.session['data_month'] = request.POST.get('data_month')
-    
-    if 'data_month' not in request.session:
-        request.session['data_month'] = '2020-04'
-
-    date = pd.to_datetime(request.session['data_month'])
-    yearValue = date.year
-    monthCode = date.month
-
-    cursor = connection.cursor()
-    cursor.execute(Query.named_query_indicators(), {'month2':monthCode, 'month1':monthCode-1})
-    data = [2]
-    for row in CursorByName(cursor):
-        data.append(row)
-
-    listCreditPortfolio = [
-            {"name": "Кредитный портфель",          "old_value": data[1]['CREDIT'],         "new_value": data[2]['CREDIT']},
-            {"name": "* NPL",                       "old_value": data[1]['NPL'],            "new_value": data[2]['NPL']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['NPL_WEIGHT'],     "new_value": data[2]['NPL_WEIGHT']},
-            {"name": "** Токсичные кредиты",        "old_value": data[1]['TOXIC'],          "new_value": data[2]['TOXIC']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['TOXIC_WEIGHT'],   "new_value": data[2]['TOXIC_WEIGHT']},
-            {"name": "Токсичные кредиты + NPL",     "old_value": data[1]['TOXIC_NPL'],      "new_value": data[2]['TOXIC_NPL']},
-            {"name": "Резервы",                     "old_value": data[1]['RESERVE'],        "new_value": data[2]['RESERVE']},
-            {"name": "Покрытие ТК+NPL резервами",   "old_value": data[1]['RESERVE_COATING'],"new_value": data[2]['RESERVE_COATING']},
-            {"name": "Просроченная задолженность",  "old_value": data[1]['OVERDUE'],        "new_value": data[2]['OVERDUE']},
-            {"name": "Удельный вес к портфелю",     "old_value": data[1]['OVERDUE_WEIGHT'], "new_value": data[2]['OVERDUE_WEIGHT']},
-        ]
-            
-    for item in listCreditPortfolio:
-        val1 = item['old_value']
-        val2 = item['new_value']
-        flag = 'flag' in item.keys()
-        item['old_value']  = '{:.1%}'.format(val1) if flag else int(val1 / 1000000)
-        item['new_value']  = '{:.1%}'.format(val2) if flag else int(val2 / 1000000)
-        item['difference'] = int((val2 - val1) / 1000000) if not flag else ''
-        item['percentage'] = '{:.1%}'.format((val2 - val1) / val2) if not flag else '' 
-
-    df = pd.DataFrame(listCreditPortfolio)
-    with BytesIO() as b:
-        # Use the StringIO object as the filehandle.
-        writer = pd.ExcelWriter(b, engine='xlsxwriter')
-        df.to_excel(writer, sheet_name='Sheet1')
-        writer.save()
-        writer.close()
-        response = HttpResponse(b.getvalue(), content_type='application/vnd.ms-excel')
-        response["Content-Disposition"] = 'attachment; filename="Indicators.xlsx"'
-        return response
-
-def client_page(request):
-    setReviewMonthInSession(request)
-    return render(request, 'credits/client_page.html')
+        
+    message = "<b>Result:</b><hr>"
+    try:
+       # TempData.objects.bulk_create(objs)
+        message += "<pre>"
+        message += "SUCCESS"
+        message += "</pre>"
+    except Exception as e:
+        message += "<p>Ошибка</p><pre>"
+        message += str(e)
+        message += "</pre>"
+    finally:
+        message += "<hr><b>Тест закончен.</b><br><code>time: "
+        end = datetime.now()
+        tdelta = end - start
+        minutes = tdelta.total_seconds() / 60
+        message += '{:.4f} minutes'.format(minutes)
+        
+    return HttpResponse(message) 
