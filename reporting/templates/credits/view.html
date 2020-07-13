@@ -76,11 +76,30 @@
 {% endblock %}
 
 {% block myscripts %}
-<script>
-function myFunction() {
-    var x = document.getElementById("formPreviewMonth");
-    x.submit()
-}
-</script>
+    <script src="{% static 'hyper/assets/js/vendor/jquery.dataTables.min.js' %}"></script>
+
+    <script>
+
+        $("#scroll-vertical-datatable").DataTable({
+            searching: false,
+            scrollY: "470px",
+            scrollCollapse: !0,
+            paging: !1,
+            language: {
+                paginate: {
+                    previous: "<i class='mdi mdi-chevron-left'>",
+                    next: "<i class='mdi mdi-chevron-right'>"
+                }
+            },
+            drawCallback: function() {
+                $(".dataTables_paginate > .pagination").addClass("pagination-rounded")
+            }
+        });
+
+        function myFunction() {
+            var x = document.getElementById("formPreviewMonth");
+            x.submit()
+        }
+    </script>
 
 {% endblock %}
