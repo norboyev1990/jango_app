@@ -1002,3 +1002,67 @@ def upload_prs(request):
         message += '{:.4f} minutes'.format(minutes)
 
     return HttpResponse(message)
+
+# Загрузка платежи из Excel
+def upload_payments(request):
+    start = datetime.now()
+    data = pd.read_excel(r'media/payments/july/hazorasp.xlsx',
+                         dtype=str)
+
+    data = data.fillna('')
+    data.columns = [
+        'code_reg', 'mfo', 'name_client', 'summa_credit', 'date_vidachi',
+        'ostatok_nach_prcnt', 'kredit_schet', 'ostatok_scheta', 'date_pogash',
+        'summa_pogash', 'prognoz_pogash', 'schet_prosr', 'ostatok_prosr',
+        'code_val', 'vid_kreditovaniya', 'istochnik_kredit', 'unique_niki']
+
+    cursor = connection.cursor()
+    cursor.execute("select NVL(max(id),0) from CREDITS_TEMPDATA2")
+    maxID = cursor.fetchone()[0] + 1
+    data.insert(0, 'MONTH_CODE', 1)
+    data.insert(0, 'ID', range(maxID, maxID + len(data)))
+
+    objs = []
+    for index, row in data.iterrows():
+        objs.append(
+            TempData2.objects.create(
+                id=row['ID'],
+                MONTH_CODE=row['MONTH_CODE'],
+                CODE_REG=row['code_reg'],
+                MFO=row['mfo'],
+                NAME_CLIENT=row['name_client'],
+                SUMMA_CREDIT=row['summa_credit'],
+                DATE_VIDACHI=row['date_vidachi'],
+                OSTATOK_NACH_PRCNT=row['ostatok_nach_prcnt'],
+                KREDIT_SCHET=row['kredit_schet'],
+                OSTATOK_SCHETA=row['ostatok_scheta'],
+                DATE_POGASH=row['date_pogash'],
+                SUMMA_POGASH=row['summa_pogash'],
+                PROGNOZ_POGASH=row['prognoz_pogash'],
+                SCHET_PROSR=row['schet_prosr'],
+                OSTATOK_PROSR=row['ostatok_prosr'],
+                CODE_VAL=row['code_val'],
+                VID_KREDITOVANIYA=row['vid_kreditovaniya'],
+                ISTOCHNIK_KREDIT=row['istochnik_kredit'],
+                UNIQUE_NIKI=row['unique_niki']
+            )
+        )
+
+    message = "<b>Result:</b><hr>"
+    try:
+        # TempData.objects.bulk_create(objs)
+        message += "<pre>"
+        message += "SUCCESS"
+        message += "</pre>"
+    except Exception as e:
+        message += "<p>Ошибка</p><pre>"
+        message += str(e)
+        message += "</pre>"
+    finally:
+        message += "<hr><b>Тест закончен.</b><br><code>time: "
+        end = datetime.now()
+        tdelta = end - start
+        minutes = tdelta.total_seconds() / 60
+        message += '{:.4f} minutes'.format(minutes)
+
+    return HttpResponse(message)

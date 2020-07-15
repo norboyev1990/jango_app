@@ -27,4 +27,5 @@ urlpatterns = [
 
     path('uploadex/', views.upload_excel, name='upload-excel'),
     path('uploadprs/', views.upload_prs, name='upload-prs'),
+    path('uploadpay/', views.upload_payments, name='upload-payments'),
 ]
