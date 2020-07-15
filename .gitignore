@@ -2,7 +2,7 @@
 *.xlsx
 *.sqlite3
 __pycache__/
-
+*.xls
 env
 test
 temp.html
