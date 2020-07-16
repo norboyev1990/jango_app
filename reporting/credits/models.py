@@ -256,19 +256,6 @@ class NplClients(models.Model):
     Branch = models.CharField(verbose_name="Филиал", max_length=255)
     Balans = models.FloatField(verbose_name="Остаток кредита")
 
-    @staticmethod
-    def table_fields():
-        return ['Number', 'Name', 'Branch', 'Balans']
-
-    @staticmethod
-    def to_array(self):
-        return {
-            'Number': self.Number,
-            'Name': self.Name,
-            'Branch': self.Branch,
-            'Balans': self.Balans
-        }
-
     class Meta:
         managed = False
 
