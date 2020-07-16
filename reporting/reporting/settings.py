@@ -88,7 +88,7 @@ DATABASES5 = {
 DATABASES = {
     'default': {
     'ENGINE':   'django.db.backends.oracle',
-    'NAME':     'localhost/pdb12c',
+    'NAME':     'localhost/orclpdb',
     'USER':     'ibs',
     'PASSWORD': 'asaka',
   }

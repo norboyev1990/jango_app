@@ -833,7 +833,7 @@ def export_all_tables(request):
 # Загрузка основные данных из Excel
 def upload_excel(request):
     start = datetime.now()
-    data = pd.read_excel (r'media/excel/january.xlsx', 
+    data = pd.read_excel (r'media/portfel/april.xlsx', 
         dtype=str)
 
     data = data.fillna('')
@@ -868,7 +868,7 @@ def upload_excel(request):
     cursor = connection.cursor()
     cursor.execute("select NVL(max(id),0) from CREDITS_TEMPDATA")
     maxID = cursor.fetchone()[0]+1
-    data.insert(0, 'MONTH_CODE', 1)
+    data.insert(0, 'MONTH_CODE', 4)
     data.insert(0, 'ID', range(maxID, maxID + len(data)))
     
         
