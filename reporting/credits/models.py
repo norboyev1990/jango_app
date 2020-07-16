@@ -77,6 +77,40 @@ class ReportData(models.Model):
     def __str__(self):
         return self.NAME_CLIENT
 
+class OverduePercents(models.Model):
+    FilialCode = models.CharField(max_length=5, null=True)
+    LoanID = models.IntegerField(null=True)
+    AccountCode = models.CharField(max_length=27, null=True)
+    SaldoOut = models.FloatField(null=True)
+    ArrearDate = models.CharField(max_length=20, null=True)
+    DayCount = models.IntegerField(null=True)
+    REPORT = models.ForeignKey(ListReports, related_name="REPORTDATA", on_delete=models.CASCADE, null=True)
+
+    def __str__(self):
+        return self.LoanID
+
+class Payments(models.Model):
+    CODE_REG = models.CharField(max_length=25)
+    MFO = models.CharField(max_length=5)
+    NAME_CLIENT = models.CharField(max_length=255)
+    SUMMA_CREDIT = models.FloatField(null=True)
+    DATE_VIDACHI = models.DateField(null=True)
+    OSTATOK_NACH_PRCNT = models.FloatField(null=True)
+    KREDIT_SCHET = models.CharField(max_length=20)
+    OSTATOK_SCHETA = models.FloatField(null=True)
+    DATE_POGASH = models.DateField(null=True)
+    SUMMA_POGASH = models.FloatField(null=True)
+    PROGNOZ_POGASH = models.FloatField(null=True)
+    SCHET_PROSR = models.CharField(max_length=25)
+    OSTATOK_PROSR = models.FloatField(null=True)
+    CODE_VAL = models.CharField(max_length=25)
+    VID_KREDITOVANIYA = models.CharField(max_length=255)
+    ISTOCHNIK_KREDIT = models.CharField(max_length=255)
+    UNIQUE_NIKI = models.CharField(max_length=25)
+    MONTH_CODE = models.IntegerField(null=True)
+    def __str__(self):
+        return self.NAME_CLIENT
+
 
 class TempData(models.Model):
     NUMBERS = models.CharField(max_length=255)
@@ -141,6 +175,28 @@ class TempData(models.Model):
     def __str__(self):
         return self.NAME_CLIENT
 
+class TempData2(models.Model):
+    CODE_REG = models.CharField(max_length=255)
+    MFO = models.CharField(max_length=255)
+    NAME_CLIENT = models.CharField(max_length=255)
+    SUMMA_CREDIT = models.CharField(max_length=255)
+    DATE_VIDACHI = models.CharField(max_length=255)
+    OSTATOK_NACH_PRCNT = models.CharField(max_length=255)
+    KREDIT_SCHET = models.CharField(max_length=255)
+    OSTATOK_SCHETA = models.CharField(max_length=255)
+    DATE_POGASH = models.CharField(max_length=255)
+    SUMMA_POGASH = models.CharField(max_length=255)
+    PROGNOZ_POGASH = models.CharField(max_length=255)
+    SCHET_PROSR = models.CharField(max_length=255)
+    OSTATOK_PROSR = models.CharField(max_length=255)
+    CODE_VAL = models.CharField(max_length=255)
+    VID_KREDITOVANIYA = models.CharField(max_length=255)
+    ISTOCHNIK_KREDIT = models.CharField(max_length=255)
+    UNIQUE_NIKI = models.CharField(max_length=255)
+    MONTH_CODE = models.IntegerField(null=True)
+
+    def __str__(self):
+        return self.NAME_CLIENT
 
 class Branch(models.Model):
     CODE = models.CharField(max_length=5, db_index=True)
@@ -193,18 +249,6 @@ class Segment(models.Model):
 
     def __str__(self):
         return self.CODE + ' - ' + self.NAME
-
-class OverduePercents(models.Model):
-    FilialCode = models.CharField(max_length=5, null=True)
-    LoanID = models.IntegerField(null=True)
-    AccountCode = models.CharField(max_length=27, null=True)
-    SaldoOut = models.FloatField(null=True)
-    ArrearDate = models.CharField(max_length=20, null=True)
-    DayCount = models.IntegerField(null=True)
-    REPORT = models.ForeignKey(ListReports, related_name="REPORTDATA", on_delete=models.CASCADE, null=True)
-
-    def __str__(self):
-        return self.LoanID
 
 class NplClients(models.Model):
     Number = models.IntegerField(verbose_name="№", db_column="Numeral")
@@ -348,6 +392,9 @@ class ByAverageFl(models.Model):
     Balance = models.FloatField(verbose_name="UZS")
     Average = models.FloatField()
 
+    class Meta:
+        managed = False
+
 class ByOverdueBranch(models.Model):
     Title = models.CharField(verbose_name="Филиал", max_length=255)
     Balance = models.FloatField(verbose_name="Выданные")
@@ -361,3 +408,6 @@ class DataByGeocode(models.Model):
     Title = models.CharField(max_length=255)
     GeoCode = models.CharField(max_length=7, primary_key=True)
     Balance = models.FloatField()
+
+    class Meta:
+        managed = False
