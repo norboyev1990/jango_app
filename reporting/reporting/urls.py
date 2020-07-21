@@ -22,4 +22,5 @@ urlpatterns = [
     path('credits/', include('credits.urls')),
     path('clients/', include('clients.urls')),
     path('export_docx/', include('export_docx.urls')),
+    path('payments/', include('payments.urls')),
 ]

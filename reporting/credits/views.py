@@ -833,42 +833,42 @@ def export_all_tables(request):
 # Загрузка основные данных из Excel
 def upload_excel(request):
     start = datetime.now()
-    data = pd.read_excel (r'media/portfel/april.xlsx', 
+    data = pd.read_excel (r'media/portfel/july0.xlsx', 
         dtype=str)
 
     data = data.fillna('')
-    data.columns = [
-        'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 
-        'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
-        'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
-        'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
-        'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 
-        'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
-        'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
-        'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 
-        'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
-        'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
-        'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
-        'maliy_biznes', 'register_number', 'oked', 'code_contract']
-
     # data.columns = [
-    #     'number', 'code_reg', 'mfo', 'rayon_podachi', 'name_client', 'balans_schet', 'credit_schet', 
+    #     'number', 'code_reg', 'mfo', 'name_client', 'balans_schet', 'credit_schet', 
     #     'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
     #     'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
     #     'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
-    #     'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'date_sudeb',
+    #     'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 
     #     'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
     #     'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
-    #     'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'zarubejniy_bank',
+    #     'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 
     #     'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
     #     'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
     #     'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
     #     'maliy_biznes', 'register_number', 'oked', 'code_contract']
+
+    data.columns = [
+        'number', 'code_reg', 'mfo', 'rayon_podachi', 'name_client', 'balans_schet', 'credit_schet', 
+        'date_resheniya', 'code_val', 'sum_dog_nom', 'sum_dog_ekv', 'date_dogovor', 
+        'date_factual', 'date_pogash', 'srok', 'dog_number_date', 'credit_procent', 
+        'prosr_procent', 'ostatok_cred_schet', 'ostatok_peresm', 'date_prodl', 
+        'date_pogash_posle_prodl', 'ostatok_prosr', 'date_obraz_pros', 'ostatok_sudeb', 'date_sudeb',
+        'kod_pravoxr_org', 'priznak_resheniya', 'date_pred_resh', 'vsego_zadoljennost', 
+        'class_kachestva', 'ostatok_rezerv', 'ostatok_nach_prcnt', 'ostatok_nach_prosr_prcnt', 
+        'ocenka_obespecheniya', 'obespechenie', 'opisanie_obespechenie', 'istochnik sredtsvo', 'zarubejniy_bank',
+        'vid_kreditovaniya' , 'purpose_credit', 'vishest_org_client', 'otrasl_kreditovaniya', 
+        'otrasl_clienta', 'class_kredit_spos', 'predsedatel_kb', 'adress_client', 'un_number_contract', 
+        'inn_passport', 'ostatok_vneb_prosr', 'konkr_nazn_credit', 'borrower_type', 'svyazanniy', 
+        'maliy_biznes', 'register_number', 'oked', 'code_contract']
     
     cursor = connection.cursor()
     cursor.execute("select NVL(max(id),0) from CREDITS_TEMPDATA")
     maxID = cursor.fetchone()[0]+1
-    data.insert(0, 'MONTH_CODE', 4)
+    data.insert(0, 'MONTH_CODE', 7)
     data.insert(0, 'ID', range(maxID, maxID + len(data)))
     
         
@@ -933,9 +933,9 @@ def upload_excel(request):
                 REGISTER_NUMBER             = row['register_number'], 
                 OKED                        = row['oked'],
                 CODE_CONTRACT               = row['code_contract'],
-                # RAYON_PODACHI               = row['rayon_podachi'],
-                # DATE_SUDEB                  = row['date_sudeb'],
-                # ZARUBEJNIY_BANK             = row['zarubejniy_bank']
+                RAYON_PODACHI               = row['rayon_podachi'],
+                DATE_SUDEB                  = row['date_sudeb'],
+                ZARUBEJNIY_BANK             = row['zarubejniy_bank']
             )
         )
         
@@ -961,7 +961,7 @@ def upload_excel(request):
 # Загрузка просрочки из Excel
 def upload_prs(request):
     start = datetime.now()
-    data = pd.read_excel(r'media/excel/april_overdue_percent.xlsx')
+    data = pd.read_excel(r'media/portfel/april_prosrochka.xlsx')
 
     data = data.fillna('')
 
@@ -1006,48 +1006,130 @@ def upload_prs(request):
 # Загрузка платежи из Excel
 def upload_payments(request):
     start = datetime.now()
-    data = pd.read_excel(r'media/payments/july/hazorasp.xlsx',
-                         dtype=str)
+
+    d = {
+            # 'andijon',
+            # 'asaka',
+            # 'avtotransport',
+            # 'bosh',
+            # 'buxoro',
+            # 'fergana',
+            # 'hazorasp',
+            # 'horazm',
+            # 'jizzah',
+            # 'namangan',
+            # 'navoi',
+            'qashqadaryo',
+            # 'qoqon',
+            # 'qoraqalpoq',
+            # 'samarqand',
+            # 'sergeli',
+            # 'shayxontohur',
+            # 'sirdaryo',
+            # 'surhandaryo',
+            # 'toshkent_shax',
+            # 'toshkent_vil',
+            # 'yunusobod',
+            # 'zarafshon'
+        }
+    counter = 0
+    for value in d:
+        path_xlsx = r'media/payments/july/{}.xlsx'.format(value)
+        data = pd.read_excel(path_xlsx, dtype=str)
+        counter += len(data.index)
+        data = data.fillna('')
+        data.columns = [
+            'code_reg', 'mfo', 'name_client', 'summa_credit', 'date_vidachi',
+            'ostatok_nach_prcnt', 'kredit_schet', 'ostatok_scheta', 'date_pogash',
+            'summa_pogash', 'prognoz_pogash', 'schet_prosr', 'ostatok_prosr',
+            'code_val', 'vid_kreditovaniya', 'istochnik_kredit', 'unique_niki']
+
+        cursor = connection.cursor()
+        cursor.execute("select NVL(max(id),0) from CREDITS_TEMPDATA2")
+        maxID = cursor.fetchone()[0] + 1
+        data.insert(0, 'MONTH_CODE', 1)
+        data.insert(0, 'ID', range(maxID, maxID + len(data)))
+
+        objs = []
+        for index, row in data.iterrows():
+            objs.append(
+                TempData2.objects.create(
+                    id=row['ID'],
+                    MONTH_CODE=row['MONTH_CODE'],
+                    CODE_REG=row['code_reg'],
+                    MFO=row['mfo'],
+                    NAME_CLIENT=row['name_client'],
+                    SUMMA_CREDIT=row['summa_credit'],
+                    DATE_VIDACHI=row['date_vidachi'],
+                    OSTATOK_NACH_PRCNT=row['ostatok_nach_prcnt'],
+                    KREDIT_SCHET=row['kredit_schet'],
+                    OSTATOK_SCHETA=row['ostatok_scheta'],
+                    DATE_POGASH=row['date_pogash'],
+                    SUMMA_POGASH=row['summa_pogash'],
+                    PROGNOZ_POGASH=row['prognoz_pogash'],
+                    SCHET_PROSR=row['schet_prosr'],
+                    OSTATOK_PROSR=row['ostatok_prosr'],
+                    CODE_VAL=row['code_val'],
+                    VID_KREDITOVANIYA=row['vid_kreditovaniya'],
+                    ISTOCHNIK_KREDIT=row['istochnik_kredit'],
+                    UNIQUE_NIKI=row['unique_niki']
+                )
+            )
+
+    
+
+    
+    
+    
+    message = "<b>Result:</b><hr>"
+    try:
+        # TempData.objects.bulk_create(objs)
+        message += "<pre>"
+        message += str(counter) + "<br>"
+        message += "SUCCESS"
+        message += "</pre>"
+    except Exception as e:
+        message += "<p>Ошибка</p><pre>"
+        message += str(e)
+        message += "</pre>"
+    finally:
+        message += "<hr><b>Тест закончен.</b><br><code>time: "
+        end = datetime.now()
+        tdelta = end - start
+        minutes = tdelta.total_seconds() / 60
+        message += '{:.4f} minutes'.format(minutes)
+
+    return HttpResponse(message)
+
+
+# Загрузка платежи из Excel
+def upload_problems(request):
+    start = datetime.now()
+
+    data = pd.read_excel(r'media/portfel/clients.xlsx')
 
     data = data.fillna('')
-    data.columns = [
-        'code_reg', 'mfo', 'name_client', 'summa_credit', 'date_vidachi',
-        'ostatok_nach_prcnt', 'kredit_schet', 'ostatok_scheta', 'date_pogash',
-        'summa_pogash', 'prognoz_pogash', 'schet_prosr', 'ostatok_prosr',
-        'code_val', 'vid_kreditovaniya', 'istochnik_kredit', 'unique_niki']
+    data.columns = ['nums', 'name', 'code']
 
     cursor = connection.cursor()
-    cursor.execute("select NVL(max(id),0) from CREDITS_TEMPDATA2")
-    maxID = cursor.fetchone()[0] + 1
-    data.insert(0, 'MONTH_CODE', 1)
-    data.insert(0, 'ID', range(maxID, maxID + len(data)))
+    data.insert(0, 'ID', range(1, 1 + len(data)))
 
     objs = []
     for index, row in data.iterrows():
         objs.append(
-            TempData2.objects.create(
+            ProblemCredits.objects.create(
                 id=row['ID'],
-                MONTH_CODE=row['MONTH_CODE'],
-                CODE_REG=row['code_reg'],
-                MFO=row['mfo'],
-                NAME_CLIENT=row['name_client'],
-                SUMMA_CREDIT=row['summa_credit'],
-                DATE_VIDACHI=row['date_vidachi'],
-                OSTATOK_NACH_PRCNT=row['ostatok_nach_prcnt'],
-                KREDIT_SCHET=row['kredit_schet'],
-                OSTATOK_SCHETA=row['ostatok_scheta'],
-                DATE_POGASH=row['date_pogash'],
-                SUMMA_POGASH=row['summa_pogash'],
-                PROGNOZ_POGASH=row['prognoz_pogash'],
-                SCHET_PROSR=row['schet_prosr'],
-                OSTATOK_PROSR=row['ostatok_prosr'],
-                CODE_VAL=row['code_val'],
-                VID_KREDITOVANIYA=row['vid_kreditovaniya'],
-                ISTOCHNIK_KREDIT=row['istochnik_kredit'],
-                UNIQUE_NIKI=row['unique_niki']
+                NUMS=int(row['nums']),
+                NAME=row['name'],
+                CODE=int(row['code'])
             )
         )
 
+    
+
+    
+    
+    
     message = "<b>Result:</b><hr>"
     try:
         # TempData.objects.bulk_create(objs)

@@ -94,7 +94,7 @@ class Payments(models.Model):
     MFO = models.CharField(max_length=5)
     NAME_CLIENT = models.CharField(max_length=255)
     SUMMA_CREDIT = models.FloatField(null=True)
-    DATE_VIDACHI = models.DateField(null=True)
+    DATE_VIDACHI = models.CharField(max_length=25,null=True)
     OSTATOK_NACH_PRCNT = models.FloatField(null=True)
     KREDIT_SCHET = models.CharField(max_length=20)
     OSTATOK_SCHETA = models.FloatField(null=True)
@@ -178,7 +178,7 @@ class TempData(models.Model):
 class TempData2(models.Model):
     CODE_REG = models.CharField(max_length=255)
     MFO = models.CharField(max_length=255)
-    NAME_CLIENT = models.CharField(max_length=255)
+    NAME_CLIENT = models.CharField(max_length=255, db_index=True)
     SUMMA_CREDIT = models.CharField(max_length=255)
     DATE_VIDACHI = models.CharField(max_length=255)
     OSTATOK_NACH_PRCNT = models.CharField(max_length=255)
@@ -197,6 +197,11 @@ class TempData2(models.Model):
 
     def __str__(self):
         return self.NAME_CLIENT
+
+class ProblemCredits(models.Model):
+    NUMS = models.IntegerField(null=True)
+    NAME = models.CharField(max_length=255, null=True)
+    CODE = models.IntegerField(null=True)
 
 class Branch(models.Model):
     CODE = models.CharField(max_length=5, db_index=True)
