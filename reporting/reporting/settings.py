@@ -32,6 +32,7 @@ ALLOWED_HOSTS = ['127.0.0.1','192.168.1.65']
 INSTALLED_APPS = [
     'credits.apps.CreditsConfig',
     'clients.apps.ClientsConfig',
+    'payments.apps.PaymentsConfig',
     'export_docx.apps.ExportDocxConfig',
     'django.contrib.admin',
     'django.contrib.auth',

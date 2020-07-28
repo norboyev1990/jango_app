@@ -1,0 +1,100 @@
+{% extends "includes/base.html" %} 
+{% load static %}
+{% load humanize %}
+{% load render_table from django_tables2 %}
+{% load querystring from django_tables2 %}
+
+{% block page_header %}
+
+{% endblock %} 
+
+{% block page_container %}
+<style>
+   .panel-default {
+    border-color: #ECECEC;
+}
+.panel {
+    border-radius: 0px;
+}
+.panel {
+    margin-bottom: 20px;
+    background-color: #fff;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    -webkit-box-shadow: 0 1px 1px rgba(0,0,0,.05);
+    box-shadow: 0 1px 1px rgba(0,0,0,.05);
+}
+.easypiechart-panel {
+    text-align: center;
+    padding: 1px 0;
+    margin-bottom: 20px;
+    }
+h4 {
+    padding-top: 10px;
+}
+.easypiechart {
+    position: relative;
+    text-align: center;
+    width: 120px;
+    height: 120px;
+    margin: 20px auto 10px auto;
+}
+#easypiechart-red .percent {
+    color: #ef4040;
+}
+.easypiechart .percent {
+    display: block;
+    position: absolute;
+    font-size: 26px;
+    top: 38px;
+    width: 120px;
+}
+audio, canvas, progress, video {
+    display: inline-block;
+    vertical-align: baseline;}
+    
+</style>
+<div class="container-fluid">
+                        
+    <!-- start page title -->
+    <div class="row">
+        <div class="col-12">
+            <div class="page-title-box">
+                <div class="page-title-right">
+                    <!-- text -->
+                </div>
+                <h4 class="page-title">Выдача и погашния</h4>
+            </div>
+        </div>
+    </div>     
+    <!-- end page title --> 
+
+
+    <div class="row">
+        <div class="col-sm-12">
+            <div class="card">
+                <div class="card-body">
+                    <a href="" class="btn btn-sm btn-success float-right mb-3">Export
+                        <i class="mdi mdi-download ml-1"></i>
+                    </a>
+                    <h4 class="header-title mb-3">{{title}}</h4>
+
+                    {% render_table table %}
+                    
+                </div> <!-- end card-body-->
+            </div>
+        </div> <!-- end col-->
+    </div>
+    <!-- end row -->
+    
+</div>
+{% endblock %}
+
+{% block myscripts %}
+<script>
+    $(document).ready(function(){
+        
+    })
+</script>
+
+{% endblock %}
