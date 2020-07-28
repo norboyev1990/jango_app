@@ -618,7 +618,8 @@ def export_all_docx(request):
 
     #break_line.add_run()
     p10 = document.add_paragraph('')
-    comment_npl = '*NPL – совокупная задолженность заёмщиков, по кредитам которых имеется просроченная задолженность сроком более 90 дней и кредитам находящимся в процессе судебного разбирательства.'
+    comment_npl = '*NPL – совокупная задолженность заёмщиков, по кредитам которых имеется просроченная задолженность ' \
+                  'сроком более 90 дней и кредитам находящимся в процессе судебного разбирательства.'
     p10.add_run(comment_npl, style = 'CommentsStyle')
     p10.paragraph_format.space_before = Pt(3)
     p10.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY_MED
@@ -646,7 +647,8 @@ def export_all_docx(request):
     p15.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY_MED
 
     p15 = document.add_paragraph('')
-    p15.add_run('Уровень кредитов с просрочкой свыше 90 дней (NPL) увеличились с 737,9 млрд. сум до 861 млрд. сум, прирост составил 14%. Увеличение NPL произошло в основном за счет выхода на просрочку следующих ТОП-10 заемщиков:')
+    p15.add_run('Уровень кредитов с просрочкой свыше 90 дней (NPL) увеличились с 737,9 млрд. сум до 861 млрд. сум, '
+                'прирост составил 14%. Увеличение NPL произошло в основном за счет выхода на просрочку следующих ТОП-10 заемщиков:')
     p15.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY_MED
 
     table2 = document.add_table(rows = 12, cols = 4)
